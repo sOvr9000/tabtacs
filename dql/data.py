@@ -5,6 +5,9 @@ from tabtacs import SoldierType
 
 
 def get_state(game):
+	'''
+	Return two-tuple of arrays.  First array is the board state, second array is the extraneous information defining the overall game state.
+	'''
 	return \
 		np.interp(
 			np.concatenate((game.board, game.placement_mask[:,:,np.newaxis]), axis=2),
@@ -18,14 +21,23 @@ def get_state(game):
 		)
 
 def games_to_input(games):
+	'''
+	Convert an iterable of TableTactics instances to a list of two inputs, suitable to be directly given to a Keras model.
+	'''
 	inp_board = np.zeros((len(games), 6, 6, 6))
 	inp_extra = np.zeros((len(games), 3))
 	for i,game in enumerate(games):
 		inp_board[i], inp_extra[i] = get_state(game)
 	return [inp_board, inp_extra]
 
-def compute_score(game):
-	return game.get_soldiers_remaining(0) - game.get_soldiers_remaining(1)
+def heuristic_score(game):
+	'''
+	Compute a heuristic value of the score imbalance in the first player's favor, assuming there are only two players.
+	For example, a negative score means the second player is likely in a better position than the first player.
+
+	Refer to heuristics.md.
+	'''
+	return sum(np.square(game.get_soldier_hitpoints_remaining(x,y)) for x,y in game.soldiers_of_army(0)) # ... WIP
 
 def simulate(games, actions):
 	scores = map(compute_score,games)
