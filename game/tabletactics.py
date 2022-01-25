@@ -63,7 +63,9 @@ class TableTactics:
 		return self.board[y, x, 3]
 	def get_soldier_actions_remaining(self, x, y):
 		return self.board[y, x, 4]
-	def get_soldiers_remaining(self, army, soldier_type):
+	def get_soldiers_remaining(self, army, soldier_type=None):
+		if soldier_type is None:
+			return sum(self.soldiers_remaining[army].values()) # all types
 		return self.soldiers_remaining[army][soldier_type]
 	def reset_actions_remaining(self, x, y):
 		self.board[y, x, 4] = get_soldier_actions(self.get_soldier_type(x, y))
