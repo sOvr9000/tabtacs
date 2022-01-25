@@ -124,6 +124,22 @@ def indices_to_actions(game, indices):
 		for i in zip(dim0_indices, dim1_indices)
 	], dtype=int)
 
-
-
+def pred_argmax(prediction, valid_actions):
+	# A model will predict on game states.  The indices of the maximum values of its predictions are used in the deep double Q-learning update rule.
+	# valid_actions is necessary to filter out the predictions for actions that aren't possible.
+	valid_indices = actions_to_indices(valid_actions)
+	arr1 = np.zeros_like(prediction[0])
+	arr2 = np.zeros_like(prediction[1])
+	arr1 = -np.inf
+	arr2 = -np.inf
+	for z, ((i, j), k) in enumerate(valid_indices):
+		arr1[z,i,j] = prediction[0][z,i,j]
+		arr2[z,k] = prediction[1][z,k]
+	argmax = []
+	for pred_board, pred_extra in zip(arr1, arr2):
+		if np.max(pred_board) > np.max(pred_extra):
+			argmax.append(np.argmax(pred_board))
+		else:
+			argmax.append(np.argmax(pred_extra))
+	return argmax
 

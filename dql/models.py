@@ -24,14 +24,14 @@ def build_model():
 
 	x = Reshape((3,3,20))(hidden_output)
 	x = Concatenate()((x, c3x3))
-	x = Conv2DTranspose(256, (2,2), (1,1), 'valid', dilation_rate = (2,2), activation='relu')(x)
+	x = Conv2DTranspose(256, (2,2), (1,1), 'valid', dilation_rate=(2,2), activation='relu')(x)
 	output_board = Conv2D(11, (2,2), (1,1), 'same')(x)
 
 	x = Dense(256, 'relu')(sub_hidden_output)
 	x = Dense(256, 'relu')(x)
 	output_end_turn = Dense(1)
 
-	model = tf.keras.Model(inputs = [input_board, input_extra], outputs = [output_board, output_end_turn])
+	model = tf.keras.Model(inputs=[input_board, input_extra], outputs=[output_board, output_end_turn])
 	model.compile('adam', 'mse')
 	return model
 
