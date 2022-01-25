@@ -1,6 +1,6 @@
 
 import numpy as np
-from tabtacs import SoldierType
+from ..game import SoldierType
 
 
 

@@ -1,4 +1,4 @@
 
-from game import *
-from dql import *
+from .game import *
+from .dql import *
 
