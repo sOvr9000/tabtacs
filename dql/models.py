@@ -2,7 +2,7 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Input, Dense, Dropout, Conv2D, Concatenate, Flatten, Reshape, Conv2DTranspose
-from data import games_to_input
+from .data import games_to_input
 
 
 def build_model():
