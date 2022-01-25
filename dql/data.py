@@ -43,6 +43,12 @@ def heuristic_score(game):
 
 	Refer to heuristics.md.
 	'''
+	if game.setup_phase:
+		return 0.
+	if not any(game.soldiers_of_army(0)):
+		return -np.inf
+	if not any(game.soldiers_of_army(1)):
+		return np.inf
 	return np.log(
 		np.square(
 			sum(

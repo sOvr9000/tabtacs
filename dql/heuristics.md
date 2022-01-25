@@ -9,9 +9,9 @@ $$H(s)=\ln\left [\frac{(\sum_{j}v_{0,j}h_{0,j})^2}{\sum_{j}(h_{0,j})^2}\right ]-
 
 $$=\ln\left [\left (\frac{\sum_{j}v_{0,j}h_{0,j}}{\sum_{j}v_{1,j}h_{1,j}}\right )^2\cdot\frac{\sum_{j}(h_{1,j})^2}{\sum_{j}(h_{0,j})^2}\right ],$$
 
-where $s$ is the current state, $h_{a,j}$ is the $j^{th}$ piece of army $a$ in state $s$, and $v_{a,j}$ is the handcrafted, estimated value of the $j^{th}$ piece of army $a$ in state $s$.
+where $s$ is the current state, $h_{a,j}$ is the remaining hitpoints of the $j^{th}$ piece of army $a$ in state $s$, and $v_{a,j}$ is the handcrafted, estimated value of the $j^{th}$ piece of army $a$ in state $s$.
 
-In English, this calculation considers the following things:
+This calculation considers the following things:
 
 - The sum of the square of the hitpoints of each piece, for each army.
 - The square of the weighted sum of the hitpoints of each piece, for each army.

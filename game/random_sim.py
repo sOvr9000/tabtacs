@@ -10,10 +10,11 @@ from .taclib import actions_to_str, action_to_str
 
 
 class RandomSim:
-	def __init__(self, game, display = True, input_pause = True):
+	def __init__(self, game, display = True, input_pause = True, step_callbacks = []):
 		self.game = game
 		self.display = display
 		self.input_pause = input_pause # use input() to pause each step in the game to see what's happening (only used if display = True)
+		self.step_callbacks = step_callbacks
 	def run(self):
 		self.game.reset()
 		while True:
@@ -28,6 +29,8 @@ class RandomSim:
 			if self.display:
 				print(f'Selected action: {action_to_str(action_func, action_args)}\n')
 				print(self.game)
-				if self.input_pause:
-					input()
+			for cb in self.step_callbacks:
+				cb()
+			if self.input_pause:
+				input()
 
