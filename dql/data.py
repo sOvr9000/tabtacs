@@ -4,6 +4,12 @@ from tabtacs import SoldierType
 
 
 
+ESTIMATED_PIECE_VALUES = {
+	SoldierType.Noble: 18,
+	SoldierType.Fighter: 15,
+	SoldierType.Thief: 14,
+}
+
 def get_state(game):
 	'''
 	Return two-tuple of arrays.  First array is the board state, second array is the extraneous information defining the overall game state.
@@ -37,13 +43,32 @@ def heuristic_score(game):
 
 	Refer to heuristics.md.
 	'''
-	return sum(np.square(game.get_soldier_hitpoints_remaining(x,y)) for x,y in game.soldiers_of_army(0)) # ... WIP
+	return np.log(
+		np.square(
+			sum(
+				ESTIMATED_PIECE_VALUES[game.get_soldier_type(x, y)] * game.get_soldier_hitpoints_remaining(x, y)
+				for x, y in game.soldiers_of_army(0)
+			) /
+			sum(
+				ESTIMATED_PIECE_VALUES[game.get_soldier_type(x, y)] * game.get_soldier_hitpoints_remaining(x, y)
+				for x, y in game.soldiers_of_army(1)
+			)
+		) *
+		sum(
+			np.square(game.get_soldier_hitpoints_remaining(x, y))
+			for x, y in game.soldiers_of_army(0)
+		) /
+		sum(
+			np.square(game.get_soldier_hitpoints_remaining(x, y))
+			for x, y in game.soldiers_of_army(1)
+		)
+	)
 
 def simulate(games, actions):
-	scores = map(compute_score,games)
+	scores = map(heuristic_score,games)
 	for i,(game,(a_func,a_args)) in enumerate(zip(games,actions)):
 		a_func(*a_args)
-		scores[i] = compute_score(game) - scores[i]
+		scores[i] = heuristic_score(game) - scores[i]
 	return scores # change in score
 
 def random_action(game):
