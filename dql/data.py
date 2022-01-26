@@ -14,17 +14,20 @@ def get_state(game):
 	'''
 	Return two-tuple of arrays.  First array is the board state, second array is the extraneous information defining the overall game state.
 	'''
+				# (-1, (1, 1, 2, 4, 2, 1)),
+				# (-1, 1)
+	conc = np.concatenate((game.board, game.placement_mask[:,:,np.newaxis]), axis=2)
 	return \
-		np.interp(
-			np.concatenate((game.board, game.get_placement_space(game.turn)[:,:,np.newaxis]), axis=2),
-			(-1, (1, 1, 2, 4, 2, 1)),
-			(-1, 1)
-		), \
-		np.interp(
-			[game.last_action_position_x, game.last_action_position_y, game.current_steps_remaining],
-			((-1, -1, 0), (5, 5, 4)),
-			(-1, 1)
-		)
+		np.concatenate((
+			conc[:,:,[0,1,5]],
+			np.interp(conc[:,:,[2,4]], (-1, 2), (-1, 1)),
+			np.interp(conc[:,:,[3]], (-1, 4), (-1, 1)),
+		), axis=2), \
+		np.array([
+			np.interp(game.last_action_location_x, (-1,5), (-1,1)),
+			np.interp(game.last_action_location_y, (-1,5), (-1,1)),
+			np.interp(game.current_steps_remaining, (0,4), (-1,1)),
+		])
 
 def games_to_input(games):
 	'''
