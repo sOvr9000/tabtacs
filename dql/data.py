@@ -16,7 +16,7 @@ def get_state(game):
 	'''
 	return \
 		np.interp(
-			np.concatenate((game.board, game.placement_mask[:,:,np.newaxis]), axis=2),
+			np.concatenate((game.board, game.get_placement_space(game.turn)[:,:,np.newaxis]), axis=2),
 			(-1, (1, 1, 2, 4, 2, 1)),
 			(-1, 1)
 		), \
