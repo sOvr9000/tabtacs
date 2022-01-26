@@ -1,8 +1,9 @@
 
+from random import random
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Input, Dense, Dropout, Conv2D, Concatenate, Flatten, Reshape, Conv2DTranspose
-from .data import games_to_input
+from .data import games_to_input, indices_to_actions, pred_argmax, actions_to_indices, random_actions
 
 
 def build_model():
@@ -40,10 +41,16 @@ def model_predict(model, games):
 	return model.predict(games_to_input(games))
 
 
-# def generate_actions(model, games, epsilon):
-# 	pred = model_predict(model, games)
-# 	vas = [list(game.valid_actions()) for game in games]
-# 	r = np.random.random(len(va))
-# 	return [va[i] if r[i] < epsilon else va[np.random.randint(len(va))] for i in np.argmax(pred, axis=1)]
+def predict_actions(model, games, epsilon):
+	pred = model_predict(model, games)
+	valid_actions_indices = actions_to_indices(game.valid_actions() for game in games)
+	action_indices = pred_argmax(pred, valid_actions_indices)
+	actions = indices_to_actions(games, action_indices)
+	r = np.random.random(len(valid_actions_indices)) < epsilon
+	random_action = random_actions(games)
+	return [
+		ra if r else a
+		for ra,a in zip(random_actions, actions)
+	]
 
 

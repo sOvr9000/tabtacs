@@ -81,6 +81,13 @@ def random_action(game):
 	va = list(game.valid_actions())
 	return va[np.random.randint(len(va))]
 
+def random_actions(games):
+	# vectorized random_action()
+	return [
+		random_action(game)
+		for game in games
+	]
+
 
 def action_to_indices(action):
 	# Model output 0 is array of shape (6,6,11).
@@ -116,23 +123,26 @@ def actions_to_indices(actions):
 	print(dim1_indices)
 	return np.array(dim0_indices, dtype=int), np.array(dim1_indices, dtype=int)
 
-def indices_to_actions(game, indices):
+def indices_to_actions(games, indices):
 	# vectorized indices_to_action()
-	dim0_indices, dim1_indices = indices
 	return np.array([
-		indices_to_action(game, i)
-		for i in zip(dim0_indices, dim1_indices)
+		indices_to_action(g, i)
+		for g, i in zip(games, indices)
 	], dtype=int)
+	# dim0_indices, dim1_indices = indices
+	# return np.array([
+	# 	indices_to_action(g, i)
+	# 	for g, i in zip(games, zip(dim0_indices, dim1_indices))
+	# ], dtype=int)
 
-def pred_argmax(prediction, valid_actions):
+def pred_argmax(prediction, valid_actions_indices):
 	# A model will predict on game states.  The indices of the maximum values of its predictions are used in the deep double Q-learning update rule.
-	# valid_actions is necessary to filter out the predictions for actions that aren't possible.
-	valid_indices = actions_to_indices(valid_actions)
+	# valid_actions_indices is necessary to filter out the predictions for actions that aren't possible.
 	arr1 = np.zeros_like(prediction[0])
 	arr2 = np.zeros_like(prediction[1])
 	arr1 = -np.inf
 	arr2 = -np.inf
-	for z, ((i, j), k) in enumerate(valid_indices):
+	for z, ((i, j), k) in enumerate(valid_actions_indices):
 		arr1[z,i,j] = prediction[0][z,i,j]
 		arr2[z,k] = prediction[1][z,k]
 	argmax = []
