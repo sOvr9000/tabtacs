@@ -30,7 +30,7 @@ def build_model():
 
 	x = Dense(256, 'relu')(sub_hidden_output)
 	x = Dense(256, 'relu')(x)
-	output_end_turn = Dense(1)
+	output_end_turn = Dense(1)(x)
 
 	model = tf.keras.Model(inputs=[input_board, input_extra], outputs=[output_board, output_end_turn])
 	model.compile('adam', 'mse')
