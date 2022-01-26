@@ -27,6 +27,10 @@ class TableTactics:
 		if not all(self.is_valid_position(x,y) for space in self.setup['placement_space'] for x,y in space):
 			raise ValueError(f'Invalid position in the placement space in the provided setup.')
 		self.num_armies = len(self.setup['placement_space'])
+		self.placement_mask = np.zeros((self.num_armies,*self.setup['board_size']), dtype=bool)
+		for army, space in enumerate(self.setup['placement_space']):
+			for x,y in space:
+				self.placement_mask[army, y, x] = True
 		for sr in self.setup['soldiers']:
 			sr[SoldierType.Noble] = 1
 		self.reset()
