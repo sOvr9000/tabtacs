@@ -43,14 +43,14 @@ def model_predict(model, games):
 
 def predict_actions(model, games, epsilon):
 	pred = model_predict(model, games)
-	valid_actions_indices = actions_to_indices(game.valid_actions() for game in games)
+	valid_actions_indices = [actions_to_indices(game.valid_actions()) for game in games]
 	action_indices = pred_argmax(pred, valid_actions_indices)
 	actions = indices_to_actions(games, action_indices)
-	r = np.random.random(len(valid_actions_indices)) < epsilon
+	r_epsilon = np.random.random(len(valid_actions_indices)) < epsilon
 	random_action = random_actions(games)
 	return [
 		ra if r else a
-		for ra,a in zip(random_actions, actions)
+		for ra,a,r in zip(random_action, actions, r_epsilon)
 	]
 
 
