@@ -5,13 +5,14 @@ from .enums import SoldierType
 from .taclib import get_adjacent_position
 from .prototypes import get_soldier_hitpoints, get_soldier_speed, get_soldier_actions
 from .board_setups import get_board_setup
+from .replay import Replay
 
 
 
 
 class TableTactics:
 	SOLDIER_DATA_SLICE = slice(1,5)
-	def __init__(self, setup = None, auto_end_turn = True):
+	def __init__(self, setup = None, auto_end_turn = True, record_replay = True):
 		'''
 		If setup is None, then the standard setup is used.
 		If setup is a string, then use the setup which defines that string.
@@ -25,6 +26,9 @@ class TableTactics:
 			setup = get_board_setup(setup)
 		self.setup = deepcopy(setup)
 		self.auto_end_turn = auto_end_turn
+		self.record_replay = record_replay
+		if self.record_replay:
+			self.replay = Replay(deepcopy(setup))
 		self.board = -np.ones((*self.setup['board_size'], 5), dtype=int)
 		# board array dimensions: (tile position Y, tile position X, tile data)
 		# tile data index 0 corresponds to obstacle existence (-1 for nonexistent, 1 otherwise)
@@ -79,6 +83,10 @@ class TableTactics:
 		if soldier_type is None:
 			return sum(self.soldiers_remaining[army].values()) # all types
 		return self.soldiers_remaining[army][soldier_type]
+	def get_replay(self):
+		if not self.record_replay:
+			raise Exception('The game was not set to record a replay.  Ensure that TableTactics is instantiated with the keyword argument record_replay=True.')
+		return self.replay
 	def reset_actions_remaining(self, x, y):
 		self.board[y, x, 4] = get_soldier_actions(self.get_soldier_type(x, y))
 	def decrement_soldier_actions_remaining(self, x, y):
@@ -102,6 +110,10 @@ class TableTactics:
 		self.turn = (self.turn + 1) % self.num_armies
 		if self.setup_phase and self.turn == 0:
 			self.setup_phase = False
+		if self.record_replay:
+			self.replay.append_action(self.end_turn, ())
+		self.check_auto_end_turn() # hopefully it doesn't cause an infinite loop... TODO: ensure that TableTactics.is_game_over() returns True even if in mutual stalemate (but such a situation might not ever come up, idk)
+		# this recursive check is in place to skip past players that are in stalemate (where no legal actions exist except ending the turn)
 	def can_add_soldier(self, x, y, soldier_type):
 		return \
 			self.setup_phase and \
@@ -131,9 +143,11 @@ class TableTactics:
 		return self.get_soldier_actions_remaining(x, y) > 0 and a == self.turn and na != -1 and a != na
 	def add_soldier(self, x, y, soldier_type):
 		if not self.can_add_soldier(x, y, soldier_type):
-			raise Exception(f'Cannot place {SoldierType(soldier_type)} at {x,y}.')
+			raise Exception(f'Cannot place {soldier_type.name} at {x,y}.')
 		self.board[y, x, self.SOLDIER_DATA_SLICE] = self.turn, soldier_type, get_soldier_hitpoints(soldier_type), get_soldier_actions(soldier_type)
 		self.soldiers_remaining[self.turn][soldier_type] += 1
+		if self.record_replay:
+			self.replay.append_action(self.add_soldier, (x,y,soldier_type))
 		self.check_auto_end_turn()
 	def move_soldier(self, x, y, d):
 		if not self.can_move_soldier(x, y, d):
@@ -149,6 +163,8 @@ class TableTactics:
 		self.current_steps_remaining -= 1
 		self.last_action_location_x = nx
 		self.last_action_location_y = ny
+		if self.record_replay:
+			self.replay.append_action(self.move_soldier, (x, y, d))
 		self.check_auto_end_turn()
 	def attack_soldier(self, x, y, d):
 		if not self.can_attack_soldier(x, y, d):
@@ -156,11 +172,14 @@ class TableTactics:
 		nx, ny = get_adjacent_position(x, y, d)
 		self.decrement_soldier_actions_remaining(x, y)
 		self.decrement_soldier_hitpoints_remaining(nx, ny)
+		if self.record_replay:
+			self.replay.append_action(self.attack_soldier, (x, y, d))
 		self.check_auto_end_turn()
 	def check_auto_end_turn(self):
 		if self.auto_end_turn:
-			if not any(self.valid_actions(include_end_turn=False)):
-				self.end_turn()
+			if not self.is_game_over():
+				if not any(self.valid_actions(include_end_turn=False)):
+					self.end_turn()
 	def is_game_over(self):
 		return \
 			(not self.setup_phase or sum(len(list(self.unoccupied_tiles(self.get_placement_space(a)))) for a in range(self.num_armies)) == 0) and \

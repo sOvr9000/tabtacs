@@ -1,5 +1,5 @@
 
-
+DIRECTION_NAMES = ['right', 'up', 'left', 'down'] # "up" and "down" may be flipped if the array is printed directly, as this assumes positive y direction means pointing upward
 
 def action_to_str(f, a):
 	# Actions are pairs of bound methods and possible arguments.  To prevent print from spamming the screen, use this method instead of print(va).
