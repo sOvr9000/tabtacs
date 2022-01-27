@@ -14,30 +14,45 @@ def get_state(game):
 	'''
 	Return two-tuple of arrays.  First array is the board state, second array is the extraneous information defining the overall game state.
 	'''
-				# (-1, (1, 1, 2, 4, 2, 1)),
-				# (-1, 1)
+
+	# TODO: BECAUSE THERE ARE ONLY TWO ARMIES, IT IS BETTER TO LET -1 CORRESPOND TO PLAYER 0, 1 CORRESPOND TO PLAYER 1, AND 0 CORRESPOND TO NO PLAYER
+	# ... to avoid exploding gradients
+
 	conc = np.concatenate((game.board, game.placement_mask[:,:,np.newaxis]), axis=2)
-	return \
-		np.concatenate((
-			conc[:,:,[0,1,5]],
-			np.interp(conc[:,:,[2,4]], (-1, 2), (-1, 1)),
-			np.interp(conc[:,:,[3]], (-1, 4), (-1, 1)),
-		), axis=2), \
-		np.array([
-			np.interp(game.last_action_location_x, (-1,5), (-1,1)),
-			np.interp(game.last_action_location_y, (-1,5), (-1,1)),
-			np.interp(game.current_steps_remaining, (0,4), (-1,1)),
-		])
+	lal = np.zeros((6,6,1))
+	lal[game.last_action_location_y, game.last_action_location_x, 0] = 1
+	return np.concatenate((
+		conc[:,:,[0,1,5]],
+		np.interp(conc[:,:,[2,4]], (-1, 2), (-1, 1)),
+		np.interp(conc[:,:,[3]], (-1, 4), (-1, 1)),
+		lal,#lol
+	), axis=2)
 
 def games_to_input(games):
 	'''
-	Convert an iterable of TableTactics instances to a list of two inputs, suitable to be directly given to a Keras model.
+	Convert an iterable of TableTactics instances to a NumPy array, suitable to be directly given to a Keras model.
 	'''
-	inp_board = np.zeros((len(games), 6, 6, 6))
-	inp_extra = np.zeros((len(games), 3))
+	inp = np.zeros((len(games), 6, 6, 7))
 	for i,game in enumerate(games):
-		inp_board[i], inp_extra[i] = get_state(game)
-	return [inp_board, inp_extra]
+		inp[i] = get_state(game)
+	return inp
+
+def game_valid_actions(game, include_end_turn = False):
+	'''
+	Return a list of actions that are valid in the game's current state.
+	'''
+	return list(game.valid_actions(include_end_turn=include_end_turn))
+
+def games_valid_actions(games, include_end_turn = False):
+	'''
+	For each game in games, return a list of actions that are valid in the game's current state.
+
+	This is a vectorized version of game_valid_actions().
+	'''
+	return [
+		game_valid_actions(game, include_end_turn=include_end_turn)
+		for game in games
+	]
 
 def heuristic_score(game):
 	'''
@@ -74,85 +89,104 @@ def heuristic_score(game):
 	)
 
 def simulate(games, actions):
-	scores = map(heuristic_score,games)
+	scores = list(map(heuristic_score,games))
 	for i,(game,(a_func,a_args)) in enumerate(zip(games,actions)):
 		a_func(*a_args)
 		scores[i] = heuristic_score(game) - scores[i]
 	return scores # change in score
 
-def random_action(game):
-	va = list(game.valid_actions())
-	return va[np.random.randint(len(va))]
+def random_action(game, valid_actions=None):
+	# valid_actions can be supplied if it's already been calculated
+	if valid_actions is None:
+		valid_actions = list(game.valid_actions())
+	return valid_actions[np.random.randint(len(valid_actions))]
 
-def random_actions(games):
+def random_actions(games, valid_actions=None):
 	# vectorized random_action()
+	# valid_actions should be None or a list of lists
+	if valid_actions is None:
+		return [
+			random_action(game)
+			for game in games
+		]
 	return [
-		random_action(game)
-		for game in games
+		random_action(game, valid_actions=vas)
+		for game, vas in zip(games, valid_actions)
 	]
 
 
 def action_to_indices(action):
-	# Model output 0 is array of shape (6,6,11).
+	'''
+	Take a single action and return a tuple representing the array indices to which the action maps.
+
+	This is the inverse of indices_to_action().
+	'''
+	if not isinstance(action, tuple):
+		raise TypeError(f'Incorrect type for action.  Received: {type(action)}')
+	# Model output is array of shape (6,6,11).
 	# 11 = 4 + 4 + 3, one layer for each movement/attack direction (4+4) or soldier type to place (3) on any given tile (6x6).
-	# Model output 1 is a float value indicating the Q-value of ending the turn.
+	# print(f'Action: {action}')
 	a_func, a_args = action
 	afn = a_func.__name__
 	if afn == 'end_turn':
-		return 1,0
+		raise ValueError('end_turn is not supported; end the turn automatically for the agent when it is the only remaining action.')
 	if afn == 'move_soldier':
-		return 0,(a_args[1],a_args[0],a_args[2])
+		return a_args[1],a_args[0],a_args[2]
 	if afn == 'attack_soldier':
-		return 0,(a_args[1],a_args[0],a_args[2]+4)
+		return a_args[1],a_args[0],a_args[2]+4
 	if afn == 'add_soldier':
-		return 0,(a_args[1],a_args[0],int(a_args[2])+8)
+		return a_args[1],a_args[0],int(a_args[2])+8
 
 def indices_to_action(game, indices):
-	# inverse of function above (game must be provided to return bound methods)
-	i,t = indices
-	if i == 1:
-		return game.end_turn,()
-	y,x,k = t
+	'''
+	Return the action in game to which indices map.
+
+	This is the inverse of action_to_indices().
+	'''
+	if not isinstance(indices, (tuple, list, np.ndarray)):
+		raise TypeError(f'Incorrect type for indices.  Received: {type(indices)}')
+	y,x,k = indices
 	if k >= 8:
-		return game.add_soldier,(x,y,SoldierType(k-8))
+		return game.add_soldier,(int(x),int(y),SoldierType(int(k)-8))
 	if k >= 4:
-		return game.attack_soldier,(x,y,k-4)
-	return game.move_soldier,(x,y,k)
+		return game.attack_soldier,(int(x),int(y),int(k)-4)
+	return game.move_soldier,(int(x),int(y),int(k))
 
 def actions_to_indices(actions):
-	# vectorized action_to_indices()
-	dim0_indices, dim1_indices = zip(*(action_to_indices(action) for action in actions))
-	print(dim0_indices)
-	print(dim1_indices)
-	return np.array(dim0_indices, dtype=int), np.array(dim1_indices, dtype=int)
+	'''
+	Take a list of actions and return a list of tuples each representing the array indices to which the corresponding action maps.
+
+	This is a vectorized version of action_to_indices().
+	'''
+	# print(f'actions_to_indices input (can only be a 2D array at max): {actions}')
+	return np.array([
+		action_to_indices(action)
+		for action in actions
+	], dtype=int)
 
 def indices_to_actions(games, indices):
-	# vectorized indices_to_action()
-	return np.array([
+	'''
+	Return the action for each game in games to which each set of indices in indices map.
+
+	This is a vectorized version of indices_to_action().
+	'''
+	return [
 		indices_to_action(g, i)
 		for g, i in zip(games, indices)
-	], dtype=int)
-	# dim0_indices, dim1_indices = indices
-	# return np.array([
-	# 	indices_to_action(g, i)
-	# 	for g, i in zip(games, zip(dim0_indices, dim1_indices))
-	# ], dtype=int)
+	]
 
 def pred_argmax(prediction, valid_actions_indices):
 	# A model will predict on game states.  The indices of the maximum values of its predictions are used in the deep double Q-learning update rule.
 	# valid_actions_indices is necessary to filter out the predictions for actions that aren't possible.
-	arr1 = np.zeros_like(prediction[0])
-	arr2 = np.zeros_like(prediction[1])
-	arr1 = -np.inf
-	arr2 = -np.inf
-	for z, ((i, j), k) in enumerate(valid_actions_indices):
-		arr1[z,i,j] = prediction[0][z,i,j]
-		arr2[z,k] = prediction[1][z,k]
-	argmax = []
-	for pred_board, pred_extra in zip(arr1, arr2):
-		if np.max(pred_board) > np.max(pred_extra):
-			argmax.append(np.argmax(pred_board))
-		else:
-			argmax.append(np.argmax(pred_extra))
+	# valid_actions_indices should be a list of NumPy arrays
+	# print(f'Valid actions indices (all games): {valid_actions_indices}')
+	argmax = np.zeros((prediction.shape[0],3))
+	for i, (pred, indices) in enumerate(zip(prediction, valid_actions_indices)):
+		# print(f'Valid actions indices (one game): {indices}')
+		arr = np.zeros_like(pred)
+		arr[:,:,:] = -np.inf
+		for y,x,k in indices:
+			arr[y,x,k] = pred[y,x,k]
+		argmax[i] = np.unravel_index(np.argmax(arr), arr.shape)
 	return argmax
 

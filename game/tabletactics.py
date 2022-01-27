@@ -154,10 +154,11 @@ class TableTactics:
 		return self.setup['placement_space'][army]
 	def get_soldier_composition(self, army):
 		return self.setup['soldiers'][army]
-	def valid_actions(self):
+	def valid_actions(self, include_end_turn = True):
 		if self.is_game_over():
 			return
-		yield self.end_turn, ()
+		if include_end_turn:
+			yield self.end_turn, ()
 		for y in range(self.board.shape[0]):
 			for x in range(self.board.shape[1]):
 				if self.setup_phase:

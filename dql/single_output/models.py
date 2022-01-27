@@ -1,38 +1,22 @@
 
-from random import random
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Dense, Dropout, Conv2D, Concatenate, Flatten, Reshape, Conv2DTranspose
-from .data import games_to_input, indices_to_actions, pred_argmax, actions_to_indices, random_actions
+from tensorflow.keras.layers import InputLayer, Dense, Conv2D, Flatten, Reshape
+from .data import games_to_input, games_valid_actions, indices_to_action, pred_argmax, actions_to_indices, random_action
 
 
 def build_model():
-	input_board = Input((6,6,6))
-	input_extra = Input((3,))
-
-	x = Conv2D(256, (2,2), (1,1), 'valid', activation='relu')(input_board)
-	x = Conv2D(256, (2,2), (1,1), 'valid', activation='relu')(x)
-	c3x3 = Conv2D(128, (2,2), (1,1), 'valid', activation='relu')(x)
-	sub_output_board1 = Flatten()(c3x3)
-	x = Conv2D(128, (2,2), (1,1), 'valid', activation='relu')(c3x3)
-	sub_output_board2 = Flatten()(x)
-	x = Concatenate()((sub_output_board1, sub_output_board2, input_extra))
-
-	x = Dense(512, 'relu')(x)
-	x = Dense(256, 'relu')(x)
-	sub_hidden_output = Dense(256, 'relu')(x)
-	hidden_output = Dense(180, 'relu')(sub_hidden_output)
-
-	x = Reshape((3,3,20))(hidden_output)
-	x = Concatenate()((x, c3x3))
-	x = Conv2DTranspose(256, (2,2), (1,1), 'valid', dilation_rate=(2,2), activation='relu')(x)
-	output_board = Conv2D(11, (2,2), (1,1), 'same')(x)
-
-	x = Dense(256, 'relu')(sub_hidden_output)
-	x = Dense(256, 'relu')(x)
-	output_end_turn = Dense(1)(x)
-
-	model = tf.keras.Model(inputs=[input_board, input_extra], outputs=[output_board, output_end_turn])
+	model = tf.keras.Sequential([
+		InputLayer((6,6,7)),
+		Conv2D(128, (2,2), (1,1), 'valid', activation='relu'),
+		Conv2D(256, (3,3), (1,1), 'valid', activation='relu'),
+		Conv2D(128, (2,2), (1,1), 'valid', activation='relu'),
+		Flatten(),
+		Dense(512, 'relu'),
+		Dense(512, 'relu'),
+		Dense(396),
+		Reshape((6,6,11)), # maybe this just... works?
+	])
 	model.compile('adam', 'mse')
 	return model
 
@@ -43,14 +27,19 @@ def model_predict(model, games):
 
 def predict_actions(model, games, epsilon):
 	pred = model_predict(model, games)
-	valid_actions_indices = [actions_to_indices(game.valid_actions()) for game in games]
-	action_indices = pred_argmax(pred, valid_actions_indices)
-	actions = indices_to_actions(games, action_indices)
-	r_epsilon = np.random.random(len(valid_actions_indices)) < epsilon
-	random_action = random_actions(games)
-	return [
-		ra if r else a
-		for ra,a,r in zip(random_action, actions, r_epsilon)
+	valid_actions = games_valid_actions(games)
+	valid_actions_indices = [
+		actions_to_indices(vas)
+		for vas in valid_actions
 	]
+	argmax = pred_argmax(pred, valid_actions_indices)
+	rand = np.random.random(len(games)) < epsilon # for each game, epsilon is the chance of the agent performing a random valid action
+	actions = [
+		random_action(game, valid_actions=vas)
+		if use_epsilon else
+		indices_to_action(game, indices)
+		for indices, vas, use_epsilon, game in zip(argmax, valid_actions, rand, games)
+	]
+	return actions
 
 

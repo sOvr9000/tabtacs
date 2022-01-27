@@ -1,7 +1,4 @@
 
-from .data import get_state, games_to_input, heuristic_score, simulate, random_action, random_actions, \
-    action_to_indices, indices_to_action, actions_to_indices, indices_to_actions, \
-    pred_argmax
-
-from .models import build_model, model_predict, predict_actions
+from . import single_output
+from . import multi_output
 
