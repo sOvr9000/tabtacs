@@ -58,7 +58,7 @@ class Replay:
 		'''
 		# There's potential to encode the entire history as binary data to compress by a factor of 100x - 10000x
 		with open(fpath, 'a') as f:
-			f.write('{};{}'.format(
+			f.write('{};{}\n'.format(
 				json.dumps(self.game_setup),
 				','.join(
 					(ACTION_LEGEND_INV[fname] + ' ' + ' '.join((str(args[0]), str(args[1]), SOLDIER_LEGEND_INV[args[2]])))

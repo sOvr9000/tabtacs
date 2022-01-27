@@ -1,6 +1,7 @@
 
 import numpy as np
 from ...game import SoldierType
+from ...game.taclib import actions_to_str
 
 
 
@@ -98,7 +99,7 @@ def simulate(games, actions):
 def random_action(game, valid_actions=None):
 	# valid_actions can be supplied if it's already been calculated
 	if valid_actions is None:
-		valid_actions = list(game.valid_actions())
+		valid_actions = list(game.valid_actions(include_end_turn=False))
 	return valid_actions[np.random.randint(len(valid_actions))]
 
 def random_actions(games, valid_actions=None):
