@@ -11,12 +11,20 @@ from .board_setups import get_board_setup
 
 class TableTactics:
 	SOLDIER_DATA_SLICE = slice(1,5)
-	def __init__(self, setup = None):
+	def __init__(self, setup = None, auto_end_turn = True):
+		'''
+		If setup is None, then the standard setup is used.
+		If setup is a string, then use the setup which defines that string.
+		Otherwise, setup must be a dictionary of a valid format to set up the game.
+
+		If auto_end_turn is True, then a player's turn ends automatically if they have no remaining moves possible for that turn.
+		'''
 		if setup is None:
 			setup = 'standard'
 		if isinstance(setup, str):
 			setup = get_board_setup(setup)
 		self.setup = deepcopy(setup)
+		self.auto_end_turn = auto_end_turn
 		self.board = -np.ones((*self.setup['board_size'], 5), dtype=int)
 		# board array dimensions: (tile position Y, tile position X, tile data)
 		# tile data index 0 corresponds to obstacle existence (-1 for nonexistent, 1 otherwise)
@@ -126,6 +134,7 @@ class TableTactics:
 			raise Exception(f'Cannot place {SoldierType(soldier_type)} at {x,y}.')
 		self.board[y, x, self.SOLDIER_DATA_SLICE] = self.turn, soldier_type, get_soldier_hitpoints(soldier_type), get_soldier_actions(soldier_type)
 		self.soldiers_remaining[self.turn][soldier_type] += 1
+		self.check_auto_end_turn()
 	def move_soldier(self, x, y, d):
 		if not self.can_move_soldier(x, y, d):
 			raise Exception(f'Cannot move soldier at {x,y} in direction {d}.')
@@ -140,12 +149,18 @@ class TableTactics:
 		self.current_steps_remaining -= 1
 		self.last_action_location_x = nx
 		self.last_action_location_y = ny
+		self.check_auto_end_turn()
 	def attack_soldier(self, x, y, d):
 		if not self.can_attack_soldier(x, y, d):
 			raise Exception(f'Cannot attack a soldier in direction {d} from {x,y}.')
 		nx, ny = get_adjacent_position(x, y, d)
 		self.decrement_soldier_actions_remaining(x, y)
 		self.decrement_soldier_hitpoints_remaining(nx, ny)
+		self.check_auto_end_turn()
+	def check_auto_end_turn(self):
+		if self.auto_end_turn:
+			if not any(self.valid_actions(include_end_turn=False)):
+				self.end_turn()
 	def is_game_over(self):
 		return \
 			(not self.setup_phase or sum(len(list(self.unoccupied_tiles(self.get_placement_space(a)))) for a in range(self.num_armies)) == 0) and \
