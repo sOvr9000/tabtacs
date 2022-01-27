@@ -1,6 +1,6 @@
 
 import numpy as np
-from ..game import SoldierType
+from ...game import SoldierType
 
 
 
