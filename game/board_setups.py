@@ -1,4 +1,5 @@
 
+import json
 from copy import deepcopy
 from random import choice
 from .enums import SoldierType
@@ -6,19 +7,33 @@ from .enums import SoldierType
 
 
 def get_board_setup(name):
+	'''
+	Get a predefined board setup by its name.
+	'''
 	if name not in board_setups:
 		raise ValueError(f'Unrecognized board setup name: {name}')
-	return board_setups[name]
+	return copy_board_setup(board_setups[name])
 
-def copy_board_setup(name):
-	return deepcopy(get_board_setup(name))
+def copy_board_setup(setup):
+	'''
+	Return a copy of the given board setup.
+	'''
+	return deepcopy(setup)
 
 def set_board_setup(name, setup):
+	'''
+	Define a board setup under a given name to be accessible via get_board_setup(name).
+	'''
 	if name in board_setups:
 		raise ValueError(f'A board setup already exists under the name \'{name}\'')
 	board_setups[name] = setup
 
 def random_obstacles(board_size, num_obstacles = 6):
+	'''
+	Randomly generate obstacles for a given board size.
+	board_size is a tuple of the form (width, height).
+	Obstacles are generated in such a way that a valid path (which a soldier can take) exists between any two non-obstructed positions on the board.
+	'''
 	w,h = board_size
 	wh = w*h
 	obstacles = [[False]*w for _ in range(h)]
@@ -68,6 +83,19 @@ def fix_board_setup(setup):
 			fixed_soldiers[SoldierType(int(k))] = v
 		setup['soldiers'][i] = fixed_soldiers
 
+def save_board_setups(fpath):
+	'''
+	Save the currently defined board_setups to file.
+	'''
+	json.dump(board_setups,open(fpath,'w'))
+
+def load_board_setups(fpath):
+	'''
+	Load board setups from file.
+	'''
+	global board_setups
+	board_setups = json.load(open(fpath,'r'))
+	map(fix_board_setup,board_setups)
 
 
 board_setups = {
@@ -90,7 +118,7 @@ board_setups = {
 	},
 }
 
-board_setups['tweaked'] = deepcopy(board_setups['standard'])
+board_setups['tweaked'] = copy_board_setup(get_board_setup('standard'))
 board_setups['tweaked']['soldiers'][1][SoldierType.Fighter] = 1
 board_setups['tweaked']['soldiers'][1][SoldierType.Thief] = 2
 
