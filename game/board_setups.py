@@ -51,13 +51,6 @@ def random_obstacles(board_size, num_obstacles = 6):
 		obstacles[p[1]][p[0]] = True
 		if not is_connected():
 			obstacles[p[1]][p[0]] = False
-		# arr = deepcopy(obstacles)
-		# for i,a in enumerate(arr):
-		# 	arr[i] = list(map('\u25a1\u25a0'.__getitem__,map(int,a)))
-		# for x,y in open_set:
-		# 	arr[y][x] = ' '
-		# print('\n'.join(' '.join(a) for a in arr))
-		# input()
 		total += 1
 
 	return obstacles
