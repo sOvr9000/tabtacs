@@ -1,10 +1,9 @@
 
 import numpy as np
-from copy import deepcopy
 from .enums import SoldierType
 from .taclib import get_adjacent_position
 from .prototypes import get_soldier_hitpoints, get_soldier_speed, get_soldier_actions
-from .board_setups import get_board_setup
+from .board_setups import get_board_setup, copy_board_setup
 from .replay import Replay
 
 
@@ -24,11 +23,11 @@ class TableTactics:
 			setup = 'standard'
 		if isinstance(setup, str):
 			setup = get_board_setup(setup)
-		self.setup = deepcopy(setup)
+		self.setup = copy_board_setup(setup)
 		self.auto_end_turn = auto_end_turn
 		self.record_replay = record_replay
 		if self.record_replay:
-			self.replay = Replay(deepcopy(setup))
+			self.replay = Replay(copy_board_setup(setup))
 		self.board = -np.ones((*self.setup['board_size'], 5), dtype=int)
 		# board array dimensions: (tile position Y, tile position X, tile data)
 		# tile data index 0 corresponds to obstacle existence (-1 for nonexistent, 1 otherwise)
@@ -45,6 +44,11 @@ class TableTactics:
 				self.placement_mask[y, x] = army - 1
 		for sr in self.setup['soldiers']:
 			sr[SoldierType.Noble] = 1
+		if 'obstacles' in self.setup:
+			self.board[:,:,0] = np.array(self.setup['obstacles'], dtype=float) * 2 - 1
+		else:
+			# default to no obstacles
+			self.board[:,:,0] = -np.ones(self.setup['board_size'])
 		self.reset()
 	def reset(self):
 		'''
@@ -55,11 +59,13 @@ class TableTactics:
 		self.last_action_location_y = -1
 		self.current_steps_remaining = 0
 		self.turn = 0
-		sr = {
-			soldier_type: 0
-			for soldier_type in SoldierType
-		}
-		self.soldiers_remaining = [deepcopy(sr) for _ in range(self.num_armies)]
+		self.soldiers_remaining = [
+			{
+				soldier_type: 0 # increments each time a soldier is added via TableTactics.add_soldier(), decrements when a soldier dies
+				for soldier_type in SoldierType
+			}
+			for _ in range(self.num_armies)
+		]
 		self.setup_phase = True
 	def is_valid_position(self, x, y):
 		return x >= 0 and y >= 0 and x < self.board.shape[1] and y < self.board.shape[0]

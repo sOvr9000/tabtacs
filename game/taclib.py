@@ -34,4 +34,4 @@ def obstacles_to_str(obstacles):
 	'''
 	When obstacles is a list of lists (in native Python), use this to format it nicely as a string.
 	'''
-	return '\n'.join(map(' '.join,(map('-x'.__getitem__,map(int,a)) for a in obstacles)))
+	return '\n'.join(map(' '.join,(map('-#'.__getitem__,map(int,a)) for a in obstacles)))
