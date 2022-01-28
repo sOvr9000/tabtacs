@@ -185,7 +185,8 @@ def load_board_setups(fpath):
 	'''
 	global board_setups
 	board_setups = json.load(open(fpath,'r'))
-	map(fix_board_setup,board_setups)
+	for setup in board_setups:
+		fix_board_setup(setup)
 
 
 board_setups = {
