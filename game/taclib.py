@@ -1,6 +1,4 @@
 
-from copy import deepcopy
-
 DIRECTION_NAMES = ['right', 'up', 'left', 'down'] # "up" and "down" may be flipped if the array is printed directly, as this assumes positive y direction means pointing upward
 
 def action_to_str(f, a):
@@ -31,7 +29,6 @@ def count_lines(fpath):
 		for i,_ in enumerate(f):
 			pass
 		return i
-
 
 def obstacles_to_str(obstacles):
 	'''

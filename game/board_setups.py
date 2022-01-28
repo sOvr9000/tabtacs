@@ -55,6 +55,20 @@ def random_obstacles(board_size, num_obstacles = 6):
 
 	return obstacles
 
+def fix_board_setup(setup):
+	'''
+	Saving and loading of setups with JSON does not retain the original objects in the setup, such as tuples inside placement_space lists.
+	This function ensures that objects are of correct type, modifying the setup in place.
+	'''
+	for i, placement_space in enumerate(setup['placement_space']):
+		setup['placement_space'][i] = list(map(tuple, placement_space))
+	for i, soldiers in enumerate(setup['soldiers']):
+		fixed_soldiers = {}
+		for k, v in soldiers.items():
+			fixed_soldiers[SoldierType(int(k))] = v
+		setup['soldiers'][i] = fixed_soldiers
+
+
 
 board_setups = {
 	'standard': {

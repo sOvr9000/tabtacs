@@ -1,7 +1,6 @@
 
 import json
-
-from numpy import place
+from .board_setups import fix_board_setup
 from .taclib import DIRECTION_NAMES, count_lines
 from .enums import SoldierType
 
@@ -79,13 +78,7 @@ def load_replays(fpath, start_index = 0, end_index = None):
 				break
 			js, action_history_str = line.split(';')
 			game_setup = json.loads(js)
-			for _i, placement_space in enumerate(game_setup['placement_space']):
-				game_setup['placement_space'][_i] = list(map(tuple, placement_space))
-			for _i, soldiers in enumerate(game_setup['soldiers']):
-				fixed_soldiers = {}
-				for k, v in soldiers.items():
-					fixed_soldiers[SoldierType(int(k))] = v
-				game_setup['soldiers'][_i] = fixed_soldiers
+			fix_board_setup(game_setup)
 			action_history = []
 			for s in action_history_str.split(','):
 				params = s.split(' ')
