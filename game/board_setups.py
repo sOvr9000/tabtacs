@@ -103,7 +103,7 @@ def random_soldiers(soldiers_per_player, symmetric = False):
 			indices = [i for i,_v in enumerate(v) if _v == m]
 			v[indices[np.random.randint(len(indices))]] -= 1
 		_soldiers = {
-			SoldierType(i+1): v
+			SoldierType(i+1): int(v)
 			for i,v in enumerate(v)
 		}
 		if symmetric:

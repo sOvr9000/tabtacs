@@ -17,7 +17,7 @@ def build_model():
 		Dense(396),
 		Reshape((6,6,11)), # maybe this just... works?
 	])
-	model.compile('adam', 'mse')
+	model.compile('adam', 'msle')
 	return model
 
 

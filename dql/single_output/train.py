@@ -17,8 +17,15 @@ def train_model(
 	epsilon_initial = 1.0,
 	epsilon_min = 0.05,
 	epsilon_rate = 0.99,
+
+	fit_batch_size = 256,
+	fit_epochs = 2,
+	fit_callbacks = None,
 ):
 	'''Train a neural network to play Table Tactics.'''
+
+	if fit_callbacks is None:
+		fit_callbacks = []
 
 	old_states = np.zeros((memory_capacity, *model.input_shape[1:]))
 	new_states = old_states.copy()
@@ -96,7 +103,7 @@ def train_model(
 			Y2,X2,K2 = pred_new_states_argmax.T
 			pred_old_states[np.arange(samples),Y1,X1,K1] = sample_rewards + 0.9 * (1 - sample_terminated.astype(int)) * pred_new_states[np.arange(samples),Y2,X2,K2]
 
-			model.fit(sample_old_states, pred_old_states)
+			model.fit(sample_old_states, pred_old_states, batch_size=fit_batch_size, epochs=fit_epochs, callbacks=fit_callbacks)
 
 			steps_since_experience_replay = 0
 

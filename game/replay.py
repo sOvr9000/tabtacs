@@ -23,12 +23,19 @@ SOLDIER_LEGEND_INV = {v:k for k,v in SOLDIER_LEGEND.items()}
 
 
 
+def fix_args(args):
+	if len(args) > 0:
+		if not isinstance(args[2], SoldierType):
+			return (int(args[0]), int(args[1]), int(args[2]))
+		return (int(args[0]), int(args[1]), args[2])
+	return args
+
 class Replay:
 	def __init__(self, game_setup):
 		self.game_setup = game_setup
 		self.action_history = []
 	def append_action(self, func, args):
-		self.action_history.append((func.__name__, args)) # do not save bound methods, just their names
+		self.action_history.append((func.__name__, fix_args(args))) # do not save bound methods, just their names
 	def __repr__(self):
 		return 'Action history:\n{}'.format(
 			'\n'.join(
