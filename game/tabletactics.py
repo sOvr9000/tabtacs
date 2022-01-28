@@ -228,17 +228,17 @@ class TableTactics:
 	def __repr__(self, spacing = 6):
 		D = self.board.shape[1] * 2 - 1 + spacing
 		s = ''
-		for t in ('Obstacles','Armies','Soldier Types','Soldier HP','Actions Remaining'):
+		for t in ('Armies','Soldier Types','Soldier HP','Actions Remaining'):
 			s += t + ' ' * (D - len(t))
 		for y in range(self.board.shape[0]):
 			s += '\n'
-			for n in range(self.board.shape[2]):
-				if n > 0:
+			for n in range(1,self.board.shape[2]):
+				if n > 1:
 					s += ' ' * spacing
 				for x in range(self.board.shape[1]):
 					if x > 0:
 						s += ' '
-					s += str(self.board[y,x,n]) if self.board[y,x,n] >= 0 else '-'
+					s += str(self.board[y,x,n]) if self.board[y,x,n] >= 0 else '#' if self.is_obstacle(x,y) else '-'
 		return s
 
 

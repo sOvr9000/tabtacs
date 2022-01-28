@@ -1,6 +1,66 @@
 
 from copy import deepcopy
+from random import choice, randint
 from .enums import SoldierType
+
+
+
+def get_board_setup(name):
+	if name not in board_setups:
+		raise ValueError(f'Unrecognized board setup name: {name}')
+	return board_setups[name]
+
+def copy_board_setup(name):
+	return deepcopy(get_board_setup(name))
+
+def set_board_setup(name, setup):
+	if name in board_setups:
+		raise ValueError(f'A board setup already exists under the name \'{name}\'')
+	board_setups[name] = setup
+
+def random_obstacles(board_size, min_obstacles = 0, max_obstacles = None):
+	w,h = board_size
+	wh = w*h
+	obstacles = [[False]*w for _ in range(h)]
+	open_set = [(x,y) for y in range(h) for x in range(w)]
+	num_obstacles = randint(min_obstacles, (w*h if max_obstacles is None else max_obstacles)-1)
+	total = 0
+
+	def is_connected():
+		for y in range(h):
+			for x in range(w):
+				if not obstacles[y][x]:
+					arr = deepcopy(obstacles)
+					flood_fill(x,y,arr)
+					return sum(map(sum,arr)) == wh
+	
+	def flood_fill(x,y,arr):
+		if not arr[y][x]:
+			arr[y][x] = True
+			if x+1 < w:
+				flood_fill(x+1,y,arr)
+			if x > 0:
+				flood_fill(x-1,y,arr)
+			if y+1 < h:
+				flood_fill(x,y+1,arr)
+			if y > 0:
+				flood_fill(x,y-1,arr)
+
+	while len(open_set) > 0 and total < num_obstacles:
+		p = choice(open_set)
+		open_set.remove(p)
+		obstacles[p[1]][p[0]] = True
+		if not is_connected():
+			obstacles[p[1]][p[0]] = False
+		# arr = deepcopy(obstacles)
+		# for i,a in enumerate(arr):
+		# 	arr[i] = list(map('\u25a1\u25a0'.__getitem__,map(int,a)))
+		# for x,y in open_set:
+		# 	arr[y][x] = ' '
+		# print('\n'.join(' '.join(a) for a in arr))
+		# input()
+		total += 1
+	return obstacles
 
 
 board_setups = {
@@ -26,9 +86,4 @@ board_setups = {
 board_setups['tweaked'] = deepcopy(board_setups['standard'])
 board_setups['tweaked']['soldiers'][1][SoldierType.Fighter] = 1
 board_setups['tweaked']['soldiers'][1][SoldierType.Thief] = 2
-
-def get_board_setup(name):
-	if name not in board_setups:
-		raise ValueError(f'Unrecognized board setup name: {name}')
-	return board_setups[name]
 
