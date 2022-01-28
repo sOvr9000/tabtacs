@@ -9,6 +9,7 @@ from .enums import SoldierType
 def get_board_setup(name):
 	'''
 	Get a predefined board setup by its name.
+	The returned setup is a copy of the predefined one, so it can be modified freely.
 	'''
 	if name not in board_setups:
 		raise ValueError(f'Unrecognized board setup name: {name}')
@@ -118,7 +119,7 @@ board_setups = {
 	},
 }
 
-board_setups['tweaked'] = copy_board_setup(get_board_setup('standard'))
+board_setups['tweaked'] = get_board_setup('standard')
 board_setups['tweaked']['soldiers'][1][SoldierType.Fighter] = 1
 board_setups['tweaked']['soldiers'][1][SoldierType.Thief] = 2
 
