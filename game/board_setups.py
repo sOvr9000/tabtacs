@@ -1,6 +1,6 @@
 
 from copy import deepcopy
-from random import choice, randint
+from random import choice
 from .enums import SoldierType
 
 
@@ -18,12 +18,11 @@ def set_board_setup(name, setup):
 		raise ValueError(f'A board setup already exists under the name \'{name}\'')
 	board_setups[name] = setup
 
-def random_obstacles(board_size, min_obstacles = 0, max_obstacles = None):
+def random_obstacles(board_size, num_obstacles = 6):
 	w,h = board_size
 	wh = w*h
 	obstacles = [[False]*w for _ in range(h)]
 	open_set = [(x,y) for y in range(h) for x in range(w)]
-	num_obstacles = randint(min_obstacles, (w*h if max_obstacles is None else max_obstacles)-1)
 	total = 0
 
 	def is_connected():
@@ -60,6 +59,7 @@ def random_obstacles(board_size, min_obstacles = 0, max_obstacles = None):
 		# print('\n'.join(' '.join(a) for a in arr))
 		# input()
 		total += 1
+
 	return obstacles
 
 
