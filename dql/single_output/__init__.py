@@ -5,3 +5,5 @@ from .data import get_state, games_to_input, heuristic_score, simulate, random_a
 
 from .models import build_model, model_predict, predict_actions
 
+from .train import train_model
+

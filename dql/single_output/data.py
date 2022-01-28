@@ -1,7 +1,6 @@
 
 import numpy as np
 from ...game import SoldierType
-from ...game.taclib import actions_to_str
 
 
 
@@ -55,7 +54,7 @@ def games_valid_actions(games, include_end_turn = False):
 		for game in games
 	]
 
-def heuristic_score(game):
+def heuristic_score(game, limit=np.inf):
 	'''
 	Compute a heuristic value of the score imbalance in the first player's favor, assuming there are only two players.
 	For example, a negative score means the second player is likely in a better position than the first player.
@@ -65,10 +64,10 @@ def heuristic_score(game):
 	if game.setup_phase:
 		return 0.
 	if not any(game.soldiers_of_army(0)):
-		return -np.inf
+		return -limit
 	if not any(game.soldiers_of_army(1)):
-		return np.inf
-	return np.log(
+		return limit
+	s = np.log(
 		np.square(
 			sum(
 				ESTIMATED_PIECE_VALUES[game.get_soldier_type(x, y)] * game.get_soldier_hitpoints_remaining(x, y)
@@ -88,13 +87,20 @@ def heuristic_score(game):
 			for x, y in game.soldiers_of_army(1)
 		)
 	)
+	return min(max(s,-limit),limit)
 
-def simulate(games, actions):
-	scores = list(map(heuristic_score,games))
-	for i,(game,(a_func,a_args)) in enumerate(zip(games,actions)):
+def heuristic_scores(games, limit=np.inf):
+	'''
+	Vectorized heuristic_score()
+	'''
+	return np.array([
+		heuristic_score(game, limit=limit)
+		for game in games
+	])
+
+def simulate(actions):
+	for a_func,a_args in actions:
 		a_func(*a_args)
-		scores[i] = heuristic_score(game) - scores[i]
-	return scores # change in score
 
 def random_action(game, valid_actions=None):
 	# valid_actions can be supplied if it's already been calculated
@@ -159,7 +165,6 @@ def actions_to_indices(actions):
 
 	This is a vectorized version of action_to_indices().
 	'''
-	# print(f'actions_to_indices input (can only be a 2D array at max): {actions}')
 	return np.array([
 		action_to_indices(action)
 		for action in actions
@@ -180,10 +185,11 @@ def pred_argmax(prediction, valid_actions_indices):
 	# A model will predict on game states.  The indices of the maximum values of its predictions are used in the deep double Q-learning update rule.
 	# valid_actions_indices is necessary to filter out the predictions for actions that aren't possible.
 	# valid_actions_indices should be a list of NumPy arrays
-	# print(f'Valid actions indices (all games): {valid_actions_indices}')
-	argmax = np.zeros((prediction.shape[0],3))
+	argmax = np.zeros((prediction.shape[0],3), dtype=int)
 	for i, (pred, indices) in enumerate(zip(prediction, valid_actions_indices)):
-		# print(f'Valid actions indices (one game): {indices}')
+		if indices is None:
+			argmax[i] = np.unravel_index(0, pred.shape)
+			continue
 		arr = np.zeros_like(pred)
 		arr[:,:,:] = -np.inf
 		for y,x,k in indices:
