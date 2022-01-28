@@ -24,3 +24,9 @@ def get_adjacent_position(x, y, d):
 	else:
 		return x,y-1
 
+def count_lines(fpath):
+	with open(fpath, 'r') as f:
+		for i,_ in enumerate(f):
+			pass
+		return i
+

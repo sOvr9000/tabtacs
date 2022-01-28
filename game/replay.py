@@ -2,7 +2,7 @@
 import json
 
 from numpy import place
-from .taclib import DIRECTION_NAMES
+from .taclib import DIRECTION_NAMES, count_lines
 from .enums import SoldierType
 
 
@@ -100,3 +100,10 @@ def load_replays(fpath, start_index = 0, end_index = None):
 			replay = Replay(game_setup)
 			replay.action_history = action_history
 			yield replay
+
+def count_replays(fpath):
+	'''
+	Return the number of lines (possible replays) in a file.
+	Useful for knowing how large a file of replays is and how many can or should be loaded.
+	'''
+	return count_lines(fpath)
