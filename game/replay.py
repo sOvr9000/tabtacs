@@ -89,6 +89,9 @@ class Replay:
 					for fname, args in self.action_history
 				)
 			))
+	def final_state(self):
+		for game, _ in self.step(): pass
+		return game
 
 def load_replays(fpath, start_index = 0, end_index = None):
 	if end_index is None:
@@ -123,3 +126,7 @@ def count_replays(fpath):
 	Useful for knowing how large a file of replays is and how many can or should be loaded.
 	'''
 	return count_lines(fpath)
+
+def final_states(replays):
+	for replay in replays:
+		yield replay.final_state()

@@ -35,3 +35,12 @@ def obstacles_to_str(obstacles):
 	When obstacles is a list of lists (in native Python), use this to format it nicely as a string.
 	'''
 	return '\n'.join(map(' '.join,(map('-#'.__getitem__,map(int,a)) for a in obstacles)))
+
+def total_scores_to_str(total_scores):
+	score_sum = sum(total_scores)
+	return ' - '.join(
+		map(str,total_scores)
+	) + ' [' + ' - '.join(
+		f'{int(0.5+s*100./score_sum):2d}%'
+		for s in total_scores
+	) + ']'
