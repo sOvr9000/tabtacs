@@ -3,6 +3,7 @@
 Using data.py and models.py to implement deep Q-learning.
 '''
 
+from hashlib import pbkdf2_hmac
 import numpy as np
 from .data import action_to_indices, actions_to_indices, games_to_input, heuristic_score, heuristic_scores, pred_argmax, random_actions, simulate
 from .models import predict_actions
@@ -13,6 +14,8 @@ def train_model(
 	game_generator,
 
 	memory_capacity = 500000,
+
+	p2_action_selection = None,
 
 	epsilon_initial = 1.0,
 	epsilon_min = 0.05,
@@ -26,6 +29,9 @@ def train_model(
 
 	if fit_callbacks is None:
 		fit_callbacks = []
+	
+	if p2_action_selection is None:
+		p2_action_selection = random_actions
 
 	old_states = np.zeros((memory_capacity, *model.input_shape[1:]))
 	new_states = old_states.copy()
@@ -54,7 +60,7 @@ def train_model(
 
 		auto_play_games = [game for game in games if game.turn == 1]
 		while len(auto_play_games) > 0:
-			simulate(random_actions(auto_play_games))
+			simulate(p2_action_selection(auto_play_games))
 			for i in range(len(auto_play_games)-1,-1,-1):
 				if auto_play_games[i].turn == 0 or auto_play_games[i].is_game_over():
 					del auto_play_games[i]
