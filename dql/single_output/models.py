@@ -21,6 +21,10 @@ def build_model():
 	return model
 
 
+def load_model(fpath):
+	return tf.keras.models.load_model(fpath)
+
+
 def model_predict(model, games):
 	return model.predict(games_to_input(games))
 
