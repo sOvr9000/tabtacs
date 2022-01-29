@@ -67,23 +67,41 @@ class TableTactics:
 			for _ in range(self.num_armies)
 		]
 		self.setup_phase = True
-	def is_valid_position(self, x, y):
+	def is_valid_position(self, x, y=None):
+		if isinstance(x, tuple):
+			x,y = x
 		return x >= 0 and y >= 0 and x < self.board.shape[1] and y < self.board.shape[0]
-	def is_position_unoccupied(self, x, y):
+	def is_position_unoccupied(self, x, y=None):
+		if isinstance(x, tuple):
+			x,y = x
 		return np.all(self.board[y, x] == -1)
-	def is_soldier(self, x, y):
+	def is_soldier(self, x, y=None):
+		if isinstance(x, tuple):
+			x,y = x
 		return self.get_army(x, y) >= 0
-	def is_obstacle(self, x, y): # alias?
+	def is_obstacle(self, x, y=None): # alias?
+		if isinstance(x, tuple):
+			x,y = x
 		return self.get_obstacle(x, y)
-	def get_obstacle(self, x, y):
+	def get_obstacle(self, x, y=None):
+		if isinstance(x, tuple):
+			x,y = x
 		return self.board[y, x, 0] == 1 # return bool type
-	def get_army(self, x, y):
+	def get_army(self, x, y=None):
+		if isinstance(x, tuple):
+			x,y = x
 		return self.board[y, x, 1]
-	def get_soldier_type(self, x, y):
+	def get_soldier_type(self, x, y=None):
+		if isinstance(x, tuple):
+			x,y = x
 		return self.board[y, x, 2]
-	def get_soldier_hitpoints_remaining(self, x, y):
+	def get_soldier_hitpoints_remaining(self, x, y=None):
+		if isinstance(x, tuple):
+			x,y = x
 		return self.board[y, x, 3]
-	def get_soldier_actions_remaining(self, x, y):
+	def get_soldier_actions_remaining(self, x, y=None):
+		if isinstance(x, tuple):
+			x,y = x
 		return self.board[y, x, 4]
 	def get_soldiers_remaining(self, army, soldier_type=None):
 		if soldier_type is None:
@@ -93,16 +111,24 @@ class TableTactics:
 		if not self.record_replay:
 			raise Exception('The game was not set to record a replay.  Ensure that TableTactics is instantiated with the keyword argument record_replay=True.')
 		return self.replay
-	def reset_actions_remaining(self, x, y):
+	def reset_actions_remaining(self, x, y=None):
+		if isinstance(x, tuple):
+			x,y = x
 		self.board[y, x, 4] = get_soldier_actions(self.get_soldier_type(x, y))
-	def decrement_soldier_actions_remaining(self, x, y):
+	def decrement_soldier_actions_remaining(self, x, y=None):
+		if isinstance(x, tuple):
+			x,y = x
 		self.board[y, x, 4] -= 1
-	def decrement_soldier_hitpoints_remaining(self, x, y):
+	def decrement_soldier_hitpoints_remaining(self, x, y=None):
+		if isinstance(x, tuple):
+			x,y = x
 		self.board[y, x, 3] -= 1
 		if self.get_soldier_hitpoints_remaining(x, y) <= 0:
 			# PURGE HIM FROM EXISTENCE
 			self.remove_soldier(x, y)
-	def remove_soldier(self, x, y):
+	def remove_soldier(self, x, y=None):
+		if isinstance(x, tuple):
+			x,y = x
 		soldier_type = self.get_soldier_type(x, y)
 		army = self.get_army(x, y)
 		self.soldiers_remaining[army][soldier_type] -= 1
@@ -226,11 +252,29 @@ class TableTactics:
 			for x, y in tile_set:
 				if self.is_position_unoccupied(x, y):
 					yield x, y
-	def soldiers_of_army(self, army):
+	def soldiers_of_army(self, army, soldier_type = None):
 		for y in range(self.board.shape[0]):
 			for x in range(self.board.shape[1]):
-				if self.get_army(x, y) == army:
+				if self.get_army(x, y) == army and (soldier_type is None or self.get_soldier_type(x, y) == soldier_type):
 					yield x, y
+	def alive_armies(self):
+		s = {}
+		for y in range(self.board.shape[0]):
+			for x in range(self.board.shape[1]):
+				if self.is_soldier(x, y) and self.get_army(x, y) not in s:
+					a = self.get_army(x, y)
+					s.add(a)
+					yield a
+	def get_armies_in_draw(self):
+		return list(sorted(self.alive_armies()))
+	def get_army_won(self):
+		aa = list(self.alive_armies())
+		if len(aa) != 1:
+			return None
+		return aa[0]
+	def is_draw(self):
+		aa = list(self.alive_armies())
+		return len(aa) != 1
 	def __repr__(self, spacing = 6):
 		D = self.board.shape[1] * 2 - 1 + spacing
 		s = ''

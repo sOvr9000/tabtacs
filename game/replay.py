@@ -1,5 +1,6 @@
 
 import json
+
 from .board_setups import fix_board_setup
 from .taclib import DIRECTION_NAMES, count_lines
 from .enums import SoldierType
@@ -51,13 +52,28 @@ class Replay:
 				for fname, args in self.action_history
 			)
 		)
-	def show(self):
+	def step(self):
+		'''
+		Run the replay of the game and yield an instance of TableTactics in the current state and the action which brought it to that state from the previous one.
+		'''
 		from .tabletactics import TableTactics
 		game = TableTactics(setup = self.game_setup, auto_end_turn = False, record_replay = False)
-		print(game)
+		yield game, (None, ())
 		for fname, args in self.action_history:
-			getattr(game, fname)(*args)
+			func = getattr(game, fname)
+			func(*args)
+			yield game, (func, args)
+	def show(self, input_pause=False, show_stats=True):
+		for game, (func, args) in self.step():
 			print(game)
+			if show_stats:
+				print(' ' * 16 + 'White   Black')
+				print(f'    Pieces        {game.get_soldiers_remaining(0)}       {game.get_soldiers_remaining(1)}')
+				print(f'   Hitpoints      {sum(map(game.get_soldier_hitpoints_remaining,game.soldiers_of_army(0)))}       {sum(map(game.get_soldier_hitpoints_remaining,game.soldiers_of_army(1)))}')
+				print(f'Noble Hitpoints   {sum(map(game.get_soldier_hitpoints_remaining,game.soldiers_of_army(0, SoldierType.Noble)))}       {sum(map(game.get_soldier_hitpoints_remaining,game.soldiers_of_army(1, SoldierType.Noble)))}')
+				print()
+			if input_pause:
+				input()
 	def save(self, fpath):
 		'''
 		Append to the file at fpath a line that encodes this replay.  Existing data is never overwritten.
