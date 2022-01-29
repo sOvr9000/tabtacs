@@ -41,6 +41,8 @@ def train_model(
 	epsilon = epsilon_initial
 	games = [game_generator(i) for i in range(parallel_games)]
 
+	scores = []
+
 	while True:
 		if populating_transitions:
 			actions = random_actions(games)
@@ -72,7 +74,8 @@ def train_model(
 			if game.is_game_over():
 				terminated[transition_index] = True
 				if game.record_replay:
-					yield game.get_replay()
+					yield game.get_replay(), scores
+				scores.append(game.get_scores())
 				games[i] = game_generator(i)
 				epsilon = max(epsilon_min, epsilon * epsilon_rate)
 				if i == 0 and not populating_transitions:
