@@ -80,7 +80,7 @@ def train_model(
 				terminated[transition_index] = True
 				if game.record_replay:
 					yield game.get_replay(), scores
-				scores.append(game.get_scores())
+				scores.append(game.get_score())
 				games[i] = game_generator(i)
 				epsilon = max(epsilon_min, epsilon * epsilon_rate)
 				if i == 0 and not populating_transitions:
