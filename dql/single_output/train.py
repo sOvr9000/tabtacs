@@ -96,7 +96,7 @@ def train_model(
 			steps_since_experience_replay += 1
 
 		if not populating_transitions and do_experience_replay:
-			samples = steps_since_experience_replay * 4
+			samples = steps_since_experience_replay * 2
 			sample_indices = np.random.randint(0, memory_capacity, samples)
 			sample_old_states = old_states[sample_indices]
 			sample_new_states = new_states[sample_indices]
