@@ -275,6 +275,18 @@ class TableTactics:
 	def is_draw(self):
 		aa = list(self.alive_armies())
 		return len(aa) != 1
+	def get_score(self):
+		'''
+		Return a list of floats indicating which armies won/drew the game.
+		'''
+		v = [0] * self.num_armies
+		if self.is_draw():
+			armies = self.get_armies_in_draw()
+			for army in armies:
+				v[army] = 1. / len(armies)
+			return v
+		v[self.get_army_won()] = 1.
+		return v
 	def __repr__(self, spacing = 6):
 		D = self.board.shape[1] * 2 - 1 + spacing
 		s = ''
