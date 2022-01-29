@@ -258,7 +258,7 @@ class TableTactics:
 				if self.get_army(x, y) == army and (soldier_type is None or self.get_soldier_type(x, y) == soldier_type):
 					yield x, y
 	def alive_armies(self):
-		s = {}
+		s = set()
 		for y in range(self.board.shape[0]):
 			for x in range(self.board.shape[1]):
 				if self.is_soldier(x, y) and self.get_army(x, y) not in s:
