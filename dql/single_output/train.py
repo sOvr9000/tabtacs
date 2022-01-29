@@ -3,7 +3,6 @@
 Using data.py and models.py to implement deep Q-learning.
 '''
 
-from hashlib import pbkdf2_hmac
 import numpy as np
 from .data import action_to_indices, actions_to_indices, games_to_input, heuristic_score, heuristic_scores, pred_argmax, random_actions, simulate
 from .models import predict_actions
