@@ -22,7 +22,9 @@ def get_state(game):
 	lal = np.zeros((6,6,1))
 	lal[game.last_action_location_y, game.last_action_location_x] = game.current_steps_remaining
 	return np.concatenate((
-		conc[:,:,[0,1,5]],
+		conc[:,:,[0]],
+		game.army_cycle[game.turn][conc[:,:,[1]]],
+		conc[:,:,[5]],
 		np.interp(conc[:,:,[2,4]], (-1, 2), (-1, 1)),
 		np.interp(conc[:,:,[3]], (-1, 4), (-1, 1)),
 		lal,#lol

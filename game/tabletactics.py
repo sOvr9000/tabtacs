@@ -50,6 +50,10 @@ class TableTactics:
 			# default to no obstacles
 			self.board[:,:,0] = -np.ones(self.setup['board_size'])
 		self.maximum_turns = self.setup['maximum_turns'] if 'maximum_turns' in self.setup else 50
+		self.army_cycle = np.array([
+			[(i+j)%self.num_armies for j in range(self.num_armies)]
+			for i in range(self.num_armies)
+		], dtype=int) # a mapping between armies, use this to convert board representations for AI from different player perspectives
 		self.reset()
 	def reset(self):
 		'''
