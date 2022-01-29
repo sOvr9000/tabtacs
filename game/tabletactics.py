@@ -49,6 +49,7 @@ class TableTactics:
 		else:
 			# default to no obstacles
 			self.board[:,:,0] = -np.ones(self.setup['board_size'])
+		self.maximum_turns = self.setup['maximum_turns'] if 'maximum_turns' in self.setup else 50
 		self.reset()
 	def reset(self):
 		'''
@@ -59,6 +60,7 @@ class TableTactics:
 		self.last_action_location_y = -1
 		self.current_steps_remaining = 0
 		self.turn = 0
+		self.total_turns = 0
 		self.soldiers_remaining = [
 			{
 				soldier_type: 0 # increments each time a soldier is added via TableTactics.add_soldier(), decrements when a soldier dies
@@ -146,6 +148,7 @@ class TableTactics:
 			self.replay.append_action(self.end_turn, ())
 		self.check_auto_end_turn() # hopefully it doesn't cause an infinite loop... TODO: ensure that TableTactics.is_game_over() returns True even if in mutual stalemate (but such a situation might not ever come up, idk)
 		# this recursive check is in place to skip past players that are in stalemate (where no legal actions exist except ending the turn)
+		self.total_turns += 1
 	def can_add_soldier(self, x, y, soldier_type):
 		return \
 			self.setup_phase and \
@@ -214,8 +217,17 @@ class TableTactics:
 					self.end_turn()
 	def is_game_over(self):
 		return \
-			(not self.setup_phase or sum(len(list(self.unoccupied_tiles(self.get_placement_space(a)))) for a in range(self.num_armies)) == 0) and \
-			sum(sum(sr.values()) > 0 for sr in self.soldiers_remaining) <= 1
+			self.total_turns >= self.maximum_turns \
+			or \
+			(
+				(
+					not self.setup_phase
+					or
+					sum(len(list(self.unoccupied_tiles(self.get_placement_space(a)))) for a in range(self.num_armies)) == 0
+				)
+				and
+				sum(sum(sr.values()) > 0 for sr in self.soldiers_remaining) <= 1
+			)
 	def get_placement_space(self, army):
 		return self.setup['placement_space'][army]
 	def get_soldier_composition(self, army):
