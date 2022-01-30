@@ -2,7 +2,7 @@
 import json
 
 from .board_setups import fix_board_setup
-from .taclib import DIRECTION_NAMES, count_lines
+from .taclib import DIRECTION_NAMES, action_to_str, count_lines
 from .enums import SoldierType
 
 
@@ -66,6 +66,8 @@ class Replay:
 	def show(self, input_pause=False, show_stats=True):
 		for game, (func, args) in self.step():
 			print(game)
+			if func is not None:
+				print('Played move: ' + action_to_str(func, args))
 			if show_stats:
 				print(' ' * 16 + 'White   Black')
 				print(f'    Pieces        {game.get_soldiers_remaining(0)}       {game.get_soldiers_remaining(1)}')
