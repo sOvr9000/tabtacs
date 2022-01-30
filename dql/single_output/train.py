@@ -35,7 +35,7 @@ def train_model(
 	if p2_action_selection is None:
 		p2_action_selection = random_actions
 
-	def verbose_print(m, **kwargs):
+	def verbose_print(m='', **kwargs):
 		if verbose:
 			print(m, **kwargs)
 	
