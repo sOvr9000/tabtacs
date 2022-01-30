@@ -16,9 +16,8 @@ def train_model(
 
 	p2_action_selection = None,
 
-	epsilon_initial = 1.0,
-	epsilon_min = 0.05,
-	epsilon_rate = 0.99,
+	epsilon_min = 0.01,
+	epsilon_max = 0.99,
 
 	fit_batch_size = 256,
 	fit_epochs = 2,
@@ -43,10 +42,11 @@ def train_model(
 	steps_since_experience_replay = 0
 	populating_transitions = True
 
-	epsilon = epsilon_initial
+	epsilon = np.linspace(epsilon_min, epsilon_max, parallel_games, True)
 	games = [game_generator(i) for i in range(parallel_games)]
 
 	scores = []
+	rewards_history = []
 
 	while True:
 		if populating_transitions:
@@ -67,6 +67,8 @@ def train_model(
 		_new_states = games_to_input(games)
 		rewards = heuristic_scores(games, limit=20) - rewards
 
+		rewards_history.append(rewards)
+
 		do_experience_replay = False
 
 		for i, (game, old_state, new_state, action, reward) in enumerate(zip(games, _old_states, _new_states, actions, rewards)):
@@ -79,10 +81,9 @@ def train_model(
 			if game.is_game_over():
 				terminated[transition_index] = True
 				if game.record_replay:
-					yield game.get_replay(), scores
+					yield game.get_replay(), scores, rewards_history
 				scores.append(game.get_score())
 				games[i] = game_generator(i)
-				epsilon = max(epsilon_min, epsilon * epsilon_rate)
 				if i == 0 and not populating_transitions:
 					do_experience_replay = True
 			else:
