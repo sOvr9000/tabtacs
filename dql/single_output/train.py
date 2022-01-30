@@ -61,17 +61,17 @@ def train_model(
 	scores = []
 	rewards_history = []
 
-	verbose_print('Populating transition history...')
+	verbose_print('=== Populating transition history... ===')
 
 	while True:
 		if populating_transitions:
 			actions = random_actions(games)
 		else:
-			verbose_print('| Predicting actions...')
+			verbose_print('\n| Predicting actions...')
 			actions = predict_actions(model, games, epsilon)
 		_old_states = games_to_input(games)
 		rewards = heuristic_scores(games, limit=20)
-		verbose_print('| Simulating actions...')
+		verbose_print('\n| Simulating actions...')
 		simulate(actions)
 
 		verbose_print('| Simulating player 2 responses...')
@@ -88,7 +88,7 @@ def train_model(
 
 		rewards_history.append(rewards)
 
-		verbose_print('| Computing transition data...')
+		verbose_print('\n| Computing transition data...')
 		num_reset = 0
 		for i, (game, old_state, new_state, action, reward) in enumerate(zip(games, _old_states, _new_states, actions, rewards)):
 
@@ -96,7 +96,7 @@ def train_model(
 				if num_reset > 0:
 					verbose_print()
 					num_reset = 0
-				verbose_print(f'| | Experience replay...     Total games / steps simulated: {len(scores)} / {len(rewards)}')
+				verbose_print(f'| | Experience replay...     Total games / steps simulated: {len(scores)} / {len(rewards_history)}')
 				samples = steps_per_experience_replay * 2
 				sample_indices = np.random.randint(0, memory_capacity, samples)
 				sample_old_states = old_states[sample_indices]
@@ -153,7 +153,7 @@ def train_model(
 				if num_reset > 0:
 					verbose_print()
 					num_reset = 0
-				verbose_print('Finished populating transition history')
+				verbose_print('=== Finished populating transition history ===')
 				steps_since_experience_replay = 0
 				populating_transitions = False
 
