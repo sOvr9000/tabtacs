@@ -1,6 +1,6 @@
 
 import numpy as np
-from ...game import SoldierType
+from ...game import SoldierType, TableTactics
 
 
 
@@ -178,6 +178,8 @@ def indices_to_actions(games, indices):
 
 	This is a vectorized version of indices_to_action().
 	'''
+	if isinstance(games, TableTactics):
+		games = [games]*len(indices)
 	return [
 		indices_to_action(g, i)
 		for g, i in zip(games, indices)

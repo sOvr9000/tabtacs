@@ -92,10 +92,12 @@ def train_model(
 			transition_index = (transition_index + 1) % memory_capacity
 			if transition_index == 0 and populating_transitions:
 				# trigger the training of the agent
+				steps_since_experience_replay = 0
 				populating_transitions = False
 			steps_since_experience_replay += 1
 
 		if not populating_transitions and do_experience_replay:
+			print(f'Steps since last experience replay: {steps_since_experience_replay}')
 			samples = steps_since_experience_replay * 2
 			sample_indices = np.random.randint(0, memory_capacity, samples)
 			sample_old_states = old_states[sample_indices]

@@ -1,12 +1,20 @@
 
 DIRECTION_NAMES = ['right', 'up', 'left', 'down'] # "up" and "down" may be flipped if the array is printed directly, as this assumes positive y direction means pointing upward
 
-def action_to_str(f, a):
-	# Actions are pairs of bound methods and possible arguments.  To prevent print from spamming the screen, use this method instead of print(va).
-	return '({}, ({}))'.format(
-		f.__name__,
-		', '.join(map(str,a))
-	)
+def action_to_str(f, a=None):
+	# Actions are pairs of bound methods and possible arguments.  To prevent print from spamming the screen, use this method instead of print(f,a).
+	if isinstance(f, tuple):
+		f,a = f
+	fname = f.__name__
+	if fname == 'end_turn':
+		return 'End turn'
+	if fname == 'add_soldier':
+		return f'Place {a[2].name} at {a[0],a[1]}'
+	if fname == 'attack_soldier':
+		return f'Attack {DIRECTION_NAMES[a[2]]} from {a[0],a[1]}'
+	if fname == 'move_soldier':
+		return f'Move {DIRECTION_NAMES[a[2]]} from {a[0],a[1]}'
+	return '({}, ({}))'.format(fname, ', '.join(map(str,a)))
 
 def actions_to_str(va, sep='\n'):
 	return sep.join(

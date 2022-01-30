@@ -72,6 +72,7 @@ class Replay:
 				print(f'   Hitpoints      {sum(map(game.get_soldier_hitpoints_remaining,game.soldiers_of_army(0)))}       {sum(map(game.get_soldier_hitpoints_remaining,game.soldiers_of_army(1)))}')
 				print(f'Noble Hitpoints   {sum(map(game.get_soldier_hitpoints_remaining,game.soldiers_of_army(0, SoldierType.Noble)))}       {sum(map(game.get_soldier_hitpoints_remaining,game.soldiers_of_army(1, SoldierType.Noble)))}')
 				print()
+			yield game, (func, args)
 			if input_pause:
 				input()
 	def save(self, fpath):
