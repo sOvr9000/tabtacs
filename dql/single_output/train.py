@@ -57,6 +57,7 @@ def train_model(
 	epsilon = np.linspace(epsilon_min, epsilon_max, parallel_games, True)
 	games = [game_generator(i) for i in range(parallel_games)]
 
+	replays = []
 	scores = []
 	rewards_history = []
 
@@ -115,6 +116,8 @@ def train_model(
 
 				steps_since_experience_replay = 0
 
+				yield replays, scores, rewards_history
+
 			# save transition
 			old_states[transition_index] = old_state
 			new_states[transition_index] = new_state
@@ -125,7 +128,7 @@ def train_model(
 				verbose_print(f'Resetting game #{i}...')
 				terminated[transition_index] = True
 				if game.record_replay:
-					yield game.get_replay(), scores, rewards_history
+					replays.append(game.get_replay())
 				scores.append(game.get_score())
 				games[i] = game_generator(i)
 			else:
