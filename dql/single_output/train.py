@@ -133,7 +133,9 @@ def train_model(
 				if num_reset == 0:
 					verbose_print(f'| | Reset games:', end='')
 				if num_reset % 8 == 0:
-					verbose_print(f',\n| | | {i:05d}', end='')
+					if num_reset > 0:
+						verbose_print(',', end='')
+					verbose_print(f'\n| | | {i:05d}', end='')
 				else:
 					verbose_print(f', {i:05d}', end='')
 				num_reset += 1
