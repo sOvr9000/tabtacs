@@ -13,6 +13,7 @@ def train_model(
 	game_generator,
 
 	memory_capacity = 500000,
+	steps_per_experience_replay = 10000,
 
 	p2_action_selection = None,
 
@@ -64,14 +65,33 @@ def train_model(
 				if auto_play_games[i].turn == 0 or auto_play_games[i].is_game_over():
 					del auto_play_games[i]
 
-		_new_states = games_to_input(games)
+		_new_states = games_to_input(games, turn=0)
 		rewards = heuristic_scores(games, limit=20) - rewards
 
 		rewards_history.append(rewards)
 
-		do_experience_replay = False
-
 		for i, (game, old_state, new_state, action, reward) in enumerate(zip(games, _old_states, _new_states, actions, rewards)):
+
+			if not populating_transitions and steps_since_experience_replay >= steps_per_experience_replay:
+				samples = steps_per_experience_replay * 2
+				sample_indices = np.random.randint(0, memory_capacity, samples)
+				sample_old_states = old_states[sample_indices]
+				sample_new_states = new_states[sample_indices]
+				sample_action_indices = action_indices[sample_indices]
+				sample_rewards = observed_rewards[sample_indices]
+				sample_terminated = terminated[sample_indices]
+
+				pred_old_states = model.predict(sample_old_states)
+				pred_new_states = model.predict(sample_new_states)
+				pred_new_states_argmax = pred_argmax(pred_new_states, map(valid_actions_indices.__getitem__, sample_indices))
+				Y1,X1,K1 = sample_action_indices.T
+				Y2,X2,K2 = pred_new_states_argmax.T
+				pred_old_states[np.arange(samples),Y1,X1,K1] = sample_rewards + 0.9 * (1 - sample_terminated.astype(int)) * pred_new_states[np.arange(samples),Y2,X2,K2]
+
+				model.fit(sample_old_states, pred_old_states, batch_size=fit_batch_size, epochs=fit_epochs, callbacks=fit_callbacks)
+
+				steps_since_experience_replay = 0
+
 			# save transition
 			old_states[transition_index] = old_state
 			new_states[transition_index] = new_state
@@ -84,8 +104,6 @@ def train_model(
 					yield game.get_replay(), scores, rewards_history
 				scores.append(game.get_score())
 				games[i] = game_generator(i)
-				if i == 0 and not populating_transitions:
-					do_experience_replay = True
 			else:
 				terminated[transition_index] = False
 				valid_actions_indices[transition_index] = actions_to_indices(game.valid_actions(include_end_turn=False))
@@ -95,28 +113,8 @@ def train_model(
 				# trigger the training of the agent
 				steps_since_experience_replay = 0
 				populating_transitions = False
+
 			steps_since_experience_replay += 1
-
-		if not populating_transitions and do_experience_replay:
-			print(f'Steps since last experience replay: {steps_since_experience_replay}')
-			samples = steps_since_experience_replay * 2
-			sample_indices = np.random.randint(0, memory_capacity, samples)
-			sample_old_states = old_states[sample_indices]
-			sample_new_states = new_states[sample_indices]
-			sample_action_indices = action_indices[sample_indices]
-			sample_rewards = observed_rewards[sample_indices]
-			sample_terminated = terminated[sample_indices]
-
-			pred_old_states = model.predict(sample_old_states)
-			pred_new_states = model.predict(sample_new_states)
-			pred_new_states_argmax = pred_argmax(pred_new_states, map(valid_actions_indices.__getitem__, sample_indices))
-			Y1,X1,K1 = sample_action_indices.T
-			Y2,X2,K2 = pred_new_states_argmax.T
-			pred_old_states[np.arange(samples),Y1,X1,K1] = sample_rewards + 0.9 * (1 - sample_terminated.astype(int)) * pred_new_states[np.arange(samples),Y2,X2,K2]
-
-			model.fit(sample_old_states, pred_old_states, batch_size=fit_batch_size, epochs=fit_epochs, callbacks=fit_callbacks)
-
-			steps_since_experience_replay = 0
 
 
 

@@ -10,7 +10,7 @@ ESTIMATED_PIECE_VALUES = {
 	SoldierType.Thief: 14,
 }
 
-def get_state(game):
+def get_state(game, turn=None):
 	'''
 	Return two-tuple of arrays.  First array is the board state, second array is the extraneous information defining the overall game state.
 	'''
@@ -18,6 +18,8 @@ def get_state(game):
 	# TODO: BECAUSE THERE ARE ONLY TWO ARMIES, IT IS BETTER TO LET -1 CORRESPOND TO PLAYER 0, 1 CORRESPOND TO PLAYER 1, AND 0 CORRESPOND TO NO PLAYER
 	# ... to avoid exploding gradients
 
+	if turn is None:
+		turn = game.turn
 	conc = np.concatenate((game.board, game.placement_mask[:,:,np.newaxis]), axis=2)
 	lal = np.zeros((6,6,1))
 	lal[game.last_action_location_y, game.last_action_location_x] = game.current_steps_remaining
@@ -30,13 +32,13 @@ def get_state(game):
 		lal,#lol
 	), axis=2)
 
-def games_to_input(games):
+def games_to_input(games, turn=None):
 	'''
 	Convert an iterable of TableTactics instances to a NumPy array, suitable to be directly given to a Keras model.
 	'''
 	inp = np.zeros((len(games), 6, 6, 7))
 	for i,game in enumerate(games):
-		inp[i] = get_state(game)
+		inp[i] = get_state(game, turn=turn)
 	return inp
 
 def game_valid_actions(game, include_end_turn = False):
