@@ -92,7 +92,7 @@ def train_model(
 		for i, (game, old_state, new_state, action, reward) in enumerate(zip(games, _old_states, _new_states, actions, rewards)):
 
 			if not populating_transitions and steps_since_experience_replay >= steps_per_experience_replay:
-				verbose_print('Experience replay...')
+				verbose_print(f'Experience replay...     Total games / steps simulated: {len(scores)} / {len(rewards)}')
 				samples = steps_per_experience_replay * 2
 				sample_indices = np.random.randint(0, memory_capacity, samples)
 				sample_old_states = old_states[sample_indices]
