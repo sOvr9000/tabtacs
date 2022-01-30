@@ -27,6 +27,12 @@ def load_model(fpath):
 	return tf.keras.models.load_model(fpath)
 
 
+def copy_model(model):
+	copy = tf.keras.models.clone_model(model)
+	copy.set_weights(model.get_weights())
+	return copy
+
+
 def model_predict(model, games):
 	return model.predict(games_to_input(games))
 

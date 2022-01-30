@@ -5,7 +5,7 @@ Using data.py and models.py to implement deep Q-learning.
 
 import numpy as np
 from .data import action_to_indices, actions_to_indices, games_to_input, heuristic_score, heuristic_scores, pred_argmax, random_actions, simulate
-from .models import predict_actions
+from .models import predict_actions, copy_model
 
 def train_model(
 	model,
@@ -19,6 +19,7 @@ def train_model(
 
 	epsilon_min = 0.01,
 	epsilon_max = 0.99,
+	tau = 0.01,
 
 	fit_batch_size = 256,
 	fit_epochs = 2,
@@ -39,6 +40,8 @@ def train_model(
 			print(m, **kwargs)
 	
 	verbose_print('Initializing run...')
+
+	target_model = copy_model(model)
 
 	old_states = np.zeros((memory_capacity, *model.input_shape[1:]))
 	new_states = old_states.copy()
@@ -99,12 +102,16 @@ def train_model(
 
 				pred_old_states = model.predict(sample_old_states)
 				pred_new_states = model.predict(sample_new_states)
-				pred_new_states_argmax = pred_argmax(pred_new_states, map(valid_actions_indices.__getitem__, sample_indices))
+				pred_new_states_target = target_model.predict(sample_new_states)
+				pred_new_states_argmax = pred_argmax(pred_new_states_target, map(valid_actions_indices.__getitem__, sample_indices))
 				Y1,X1,K1 = sample_action_indices.T
 				Y2,X2,K2 = pred_new_states_argmax.T
 				pred_old_states[np.arange(samples),Y1,X1,K1] = sample_rewards + 0.9 * (1 - sample_terminated.astype(int)) * pred_new_states[np.arange(samples),Y2,X2,K2]
 
 				model.fit(sample_old_states, pred_old_states, batch_size=fit_batch_size, epochs=fit_epochs, callbacks=fit_callbacks)
+
+				# Polyak averaging
+				target_model.set_weights([tau*w1+(1-tau)*w2 for w1, w2 in zip(model.get_weights(), target_model.get_weights())])
 
 				steps_since_experience_replay = 0
 
