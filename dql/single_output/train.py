@@ -67,14 +67,14 @@ def train_model(
 		if populating_transitions:
 			actions = random_actions(games)
 		else:
-			verbose_print('Predicting actions...')
+			verbose_print('| Predicting actions...')
 			actions = predict_actions(model, games, epsilon)
 		_old_states = games_to_input(games)
 		rewards = heuristic_scores(games, limit=20)
-		verbose_print('Simulating actions...')
+		verbose_print('| Simulating actions...')
 		simulate(actions)
 
-		verbose_print('Simulating player 2 responses...')
+		verbose_print('| Simulating player 2 responses...')
 		auto_play_games = [game for game in games if game.turn == 1]
 		while len(auto_play_games) > 0:
 			verbose_print('.', end='')
@@ -88,11 +88,15 @@ def train_model(
 
 		rewards_history.append(rewards)
 
-		verbose_print('Computing transition data...')
+		verbose_print('| Computing transition data...')
+		num_reset = 0
 		for i, (game, old_state, new_state, action, reward) in enumerate(zip(games, _old_states, _new_states, actions, rewards)):
 
 			if not populating_transitions and steps_since_experience_replay >= steps_per_experience_replay:
-				verbose_print(f'Experience replay...     Total games / steps simulated: {len(scores)} / {len(rewards)}')
+				if num_reset > 0:
+					verbose_print()
+					num_reset = 0
+				verbose_print(f'| | Experience replay...     Total games / steps simulated: {len(scores)} / {len(rewards)}')
 				samples = steps_per_experience_replay * 2
 				sample_indices = np.random.randint(0, memory_capacity, samples)
 				sample_old_states = old_states[sample_indices]
@@ -125,7 +129,15 @@ def train_model(
 			observed_rewards[transition_index] = reward
 
 			if game.is_game_over():
-				verbose_print(f'Resetting game #{i}...')
+
+				if num_reset == 0:
+					verbose_print(f'| | Reset games:', end='')
+				if num_reset % 8 == 0:
+					verbose_print(f',\n| | | {i:05d}', end='')
+				else:
+					verbose_print(f', {i:05d}', end='')
+				num_reset += 1
+
 				terminated[transition_index] = True
 				if game.record_replay:
 					replays.append(game.get_replay())
@@ -138,6 +150,9 @@ def train_model(
 			transition_index = (transition_index + 1) % memory_capacity
 			if transition_index == 0 and populating_transitions:
 				# trigger the training of the agent
+				if num_reset > 0:
+					verbose_print()
+					num_reset = 0
 				verbose_print('Finished populating transition history')
 				steps_since_experience_replay = 0
 				populating_transitions = False
