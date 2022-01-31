@@ -56,7 +56,7 @@ def train_model(
 
 	epsilon = np.linspace(epsilon_min, epsilon_max, parallel_games, True)
 	games = [game_generator(i) for i in range(parallel_games)]
-	agent_player = np.random.randint(0, 2, size=parallel_games)
+	agent_player = np.arange(parallel_games, dtype=int) % 2
 
 	replays = []
 	scores = []
@@ -65,13 +65,13 @@ def train_model(
 	def simulate_responses():
 		# For each running game in the simulation, ensure that the current player to move is the agent that's training.
 		# All moves played by the agent that isn't training are selected with opponent_action_selection().
-		_games = [game for game,player in zip(games,agent_player) if game.turn != player]
+		_games, _agent_player = zip(*((game,player) for game,player in zip(games,agent_player) if game.turn != player))
 		while len(_games) > 0:
 			verbose_print('.', end='')
 			simulate(opponent_action_selection(_games))
-			for i in range(len(_games)-1,-1,-1):
-				if _games[i].turn == 0 or _games[i].is_game_over():
-					del _games[i]
+			for i,(g,p) in enumerate(zip(_games,_agent_player)):
+				if g.turn == p or g.is_game_over():
+					del _games[i], _agent_player[i]
 
 	verbose_print('=== Populating transition history... ===')
 
@@ -89,10 +89,10 @@ def train_model(
 		verbose_print('\n| Simulating actions...')
 		simulate(actions)
 
-		verbose_print('| Simulating player 2 responses...')
+		verbose_print('| Simulating responses...')
 		simulate_responses()
 
-		_new_states = games_to_input(games, turn=0)
+		_new_states = games_to_input(games, turn=agent_player)
 		rewards = heuristic_scores(games, limit=20) - rewards
 
 		rewards_history.append(rewards)

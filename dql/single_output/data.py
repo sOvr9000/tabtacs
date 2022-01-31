@@ -38,8 +38,12 @@ def games_to_input(games, turn=None):
 	Convert an iterable of TableTactics instances to a NumPy array, suitable to be directly given to a Keras model.
 	'''
 	inp = np.zeros((len(games), 6, 6, 7))
-	for i,game in enumerate(games):
-		inp[i] = get_state(game, turn=turn)
+	if turn is None or isinstance(turn, int):
+		for i,game in enumerate(games):
+			inp[i] = get_state(game, turn=turn)
+	else:
+		for i,(game,t) in enumerate(zip(games,turn)):
+			inp[i] = get_state(game, turn=t)
 	return inp
 
 def game_valid_actions(game, include_end_turn = False):
