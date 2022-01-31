@@ -21,12 +21,12 @@ def get_state(game, turn=None):
 	if turn is None:
 		turn = game.turn
 	conc = np.concatenate((game.board, game.placement_mask[:,:,np.newaxis]), axis=2)
+	ac = game.army_cycle[turn][conc[:,:,[1,5]].astype(int)]
 	lal = np.zeros((6,6,1))
 	lal[game.last_action_location_y, game.last_action_location_x] = game.current_steps_remaining
 	return np.concatenate((
 		conc[:,:,[0]],
-		game.army_cycle[turn][conc[:,:,[1]].astype(int)],
-		conc[:,:,[5]],
+		np.where(conc == -1, conc, ac),
 		np.interp(conc[:,:,[2,4]], (-1, 2), (-1, 1)),
 		np.interp(conc[:,:,[3]], (-1, 4), (-1, 1)),
 		lal,#lol
