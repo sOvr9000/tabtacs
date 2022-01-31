@@ -4,7 +4,7 @@ Using data.py and models.py to implement deep Q-learning.
 '''
 
 import numpy as np
-from .data import action_to_indices, actions_to_indices, games_to_input, heuristic_score, heuristic_scores, pred_argmax, random_actions, simulate
+from .data import action_to_indices, actions_to_indices, games_to_input, heuristic_scores, pred_argmax, random_actions, simulate, state_flip_symmetry, state_rot_symmetry, action_symmetry, actions_symmetry
 from .models import predict_actions, copy_model
 
 def train_model(
@@ -173,3 +173,15 @@ def train_model(
 
 
 
+def symmetric_transitions(old_state, new_state, action_indices, reward, terminated, valid_actions_indices):
+	old_state_flipped = state_flip_symmetry(old_state)
+	new_state_flipped = state_flip_symmetry(new_state)
+	for k in range(4):
+		for flip in range(2):
+			yield \
+			state_rot_symmetry(old_state_flipped if flip else old_state, k), \
+			state_rot_symmetry(new_state_flipped if flip else new_state, k), \
+			action_symmetry(action_indices, k, flip), \
+			reward, \
+			terminated, \
+			actions_symmetry(valid_actions_indices, k, flip)

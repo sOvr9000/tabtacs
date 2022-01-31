@@ -10,6 +10,62 @@ ESTIMATED_PIECE_VALUES = {
 	SoldierType.Thief: 14,
 }
 
+ACTION_INDICES_SYMMETRIES = [
+	[
+		[
+			[
+				[
+					[y,x,z] # initialize as identity for now
+					for z in range(11)
+				]
+				for x in range(6)
+			]
+			for y in range(6)
+		]
+		for k in range(4)
+	]
+	for flip in range(2)
+]
+
+z_flip_map = [0,3,2,1,4,7,6,5,8,9,10]
+z_rot_map = [3,0,1,2,7,4,5,6,8,9,10]
+
+for flip in range(2):
+	for k in range(4):
+		for y in range(6):
+			for x in range(6):
+				for z in range(11):
+					if flip:
+						nz = z_flip_map[z]
+						ACTION_INDICES_SYMMETRIES[flip][k][y][x][z] = [5-y,x,nz]
+					if k > 0:
+						ry, rx, rz = ACTION_INDICES_SYMMETRIES[flip][k-1][y][x][z]
+						nz = z_rot_map[rz]
+						ACTION_INDICES_SYMMETRIES[flip][k][y][x][z] = [5-rx,ry,nz]
+
+ACTION_INDICES_SYMMETRIES = np.array(ACTION_INDICES_SYMMETRIES, dtype=int)
+
+def state_flip_symmetry(state, flip):
+	if flip:
+		return np.flip(state, 0)
+	return state.copy()
+
+def state_rot_symmetry(state, k):
+	return np.rot90(state, k, (0,1))
+
+def action_symmetry(action_indices, k, flip):
+	y,x,z = action_indices # normally using y,x,k to denote model output array indices
+	return ACTION_INDICES_SYMMETRIES[flip,k,y,x,z]
+
+def actions_symmetry(actions_indices, k, flip):
+	'''
+	Vectorized action_symmetry().
+	'''
+	Y,X,K = actions_indices.T
+	return ACTION_INDICES_SYMMETRIES[flip,k,Y,X,K]
+
+
+
 def get_state(game, turn=None):
 	'''
 	Return two-tuple of arrays.  First array is the board state, second array is the extraneous information defining the overall game state.
