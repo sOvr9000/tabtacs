@@ -15,7 +15,7 @@ def train_model(
 	memory_capacity = 500000,
 	steps_per_experience_replay = 10000,
 
-	p2_action_selection = None,
+	opponent_action_selection = None,
 
 	epsilon_min = 0.01,
 	epsilon_max = 0.99,
@@ -32,8 +32,8 @@ def train_model(
 	if fit_callbacks is None:
 		fit_callbacks = []
 	
-	if p2_action_selection is None:
-		p2_action_selection = random_actions
+	if opponent_action_selection is None:
+		opponent_action_selection = random_actions
 
 	def verbose_print(m='', **kwargs):
 		if verbose:
@@ -56,14 +56,29 @@ def train_model(
 
 	epsilon = np.linspace(epsilon_min, epsilon_max, parallel_games, True)
 	games = [game_generator(i) for i in range(parallel_games)]
+	agent_player = np.random.randint(0, 2, size=parallel_games)
 
 	replays = []
 	scores = []
 	rewards_history = []
 
+	def simulate_responses():
+		# For each running game in the simulation, ensure that the current player to move is the agent that's training.
+		# All moves played by the agent that isn't training are selected with opponent_action_selection().
+		_games = [game for game,player in zip(games,agent_player) if game.turn != player]
+		while len(_games) > 0:
+			verbose_print('.', end='')
+			simulate(opponent_action_selection(_games))
+			for i in range(len(_games)-1,-1,-1):
+				if _games[i].turn == 0 or _games[i].is_game_over():
+					del _games[i]
+
 	verbose_print('=== Populating transition history... ===')
 
 	while True:
+		verbose_print('| Initializing reset games...')
+		simulate_responses() # they all start with player 1 to move, so where the agent is player 2, bring each game to the state where it's player 2 to move
+
 		if populating_transitions:
 			actions = random_actions(games)
 		else:
@@ -75,13 +90,7 @@ def train_model(
 		simulate(actions)
 
 		verbose_print('| Simulating player 2 responses...')
-		auto_play_games = [game for game in games if game.turn == 1]
-		while len(auto_play_games) > 0:
-			verbose_print('.', end='')
-			simulate(p2_action_selection(auto_play_games))
-			for i in range(len(auto_play_games)-1,-1,-1):
-				if auto_play_games[i].turn == 0 or auto_play_games[i].is_game_over():
-					del auto_play_games[i]
+		simulate_responses()
 
 		_new_states = games_to_input(games, turn=0)
 		rewards = heuristic_scores(games, limit=20) - rewards
