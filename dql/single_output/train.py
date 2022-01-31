@@ -131,11 +131,11 @@ def train_model(
 
 				yield replays, scores, rewards_history
 
-			# save transition
-			old_states[transition_index] = old_state
-			new_states[transition_index] = new_state
-			action_indices[transition_index] = action_to_indices(action)
-			observed_rewards[transition_index] = reward
+			t_old_state = old_state
+			t_new_state = new_state
+			t_action_indices = action_to_indices(action)
+			t_observed_reward = reward
+			t_valid_actions_indices = None
 
 			if game.is_game_over():
 
@@ -149,24 +149,46 @@ def train_model(
 					verbose_print(f', {i:05d}', end='')
 				num_reset += 1
 
-				terminated[transition_index] = True
+				t_terminated = True
 				if game.record_replay:
 					replays.append(game.get_replay())
 				scores.append(game.get_score())
 				games[i] = game_generator(i)
 			else:
-				terminated[transition_index] = False
-				valid_actions_indices[transition_index] = actions_to_indices(game.valid_actions(include_end_turn=False))
+				t_terminated = False
+				t_valid_actions_indices = actions_to_indices(game.valid_actions(include_end_turn=False))
 
-			transition_index = (transition_index + 1) % memory_capacity
-			if transition_index == 0 and populating_transitions:
-				# trigger the training of the agent
-				if num_reset > 0:
-					verbose_print()
-					num_reset = 0
-				verbose_print('=== Finished populating transition history ===')
-				steps_since_experience_replay = 0
-				populating_transitions = False
+			# save transition and its symmetries
+			for s_old_state, \
+				s_new_state, \
+				s_action_indices, \
+				s_observed_reward, \
+				s_terminated, \
+				s_valid_actions_indices \
+			in symmetric_transitions(
+				t_old_state,
+				t_new_state,
+				t_action_indices,
+				t_observed_reward,
+				t_terminated,
+				t_valid_actions_indices
+			):
+				old_states[transition_index] = s_old_state
+				new_states[transition_index] = s_new_state
+				action_indices[transition_index] = s_action_indices
+				observed_rewards[transition_index] = s_observed_reward
+				terminated[transition_index] = s_terminated,
+				valid_actions_indices[transition_index] = s_valid_actions_indices
+				transition_index = (transition_index + 1) % memory_capacity
+
+				if transition_index == 0 and populating_transitions:
+					# trigger the training of the agent
+					if num_reset > 0:
+						verbose_print()
+						num_reset = 0
+					verbose_print('=== Finished populating transition history ===')
+					steps_since_experience_replay = 0
+					populating_transitions = False
 
 			steps_since_experience_replay += 1
 
