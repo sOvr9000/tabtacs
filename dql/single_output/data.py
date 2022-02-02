@@ -54,6 +54,8 @@ def state_rot_symmetry(state, k):
 	return np.rot90(state, k, (0,1))
 
 def action_symmetry(action_indices, k, flip):
+	if action_indices is None:
+		return None
 	y,x,z = action_indices # normally using y,x,k to denote model output array indices
 	return ACTION_INDICES_SYMMETRIES[flip,k,y,x,z]
 
@@ -61,6 +63,8 @@ def actions_symmetry(actions_indices, k, flip):
 	'''
 	Vectorized action_symmetry().
 	'''
+	if actions_indices is None:
+		return None
 	Y,X,K = actions_indices.T
 	return ACTION_INDICES_SYMMETRIES[flip,k,Y,X,K]
 
@@ -83,7 +87,7 @@ def get_state(game, turn=None):
 	lal[game.last_action_location_y, game.last_action_location_x] = game.current_steps_remaining
 	return np.concatenate((
 		conc[:,:,[0]],
-		np.where(conc_army == -1, conc, ac),
+		np.where(conc_army == -1, conc_army, ac),
 		np.interp(conc[:,:,[2,4]], (-1, 2), (-1, 1)),
 		np.interp(conc[:,:,[3]], (-1, 4), (-1, 1)),
 		lal,#lol

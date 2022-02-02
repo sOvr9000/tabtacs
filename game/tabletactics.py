@@ -220,18 +220,11 @@ class TableTactics:
 				if not any(self.valid_actions(include_end_turn=False)):
 					self.end_turn()
 	def is_game_over(self):
-		return \
-			self.total_turns >= self.maximum_turns \
-			or \
-			(
-				(
-					not self.setup_phase
-					or
-					sum(len(list(self.unoccupied_tiles(self.get_placement_space(a)))) for a in range(self.num_armies)) == 0
-				)
-				and
-				sum(sum(sr.values()) > 0 for sr in self.soldiers_remaining) <= 1
-			)
+		return not self.setup_phase and (
+			self.total_turns >= self.maximum_turns
+			or
+			sum(sum(sr.values()) > 0 for sr in self.soldiers_remaining) <= 1
+		)
 	def get_placement_space(self, army):
 		return self.setup['placement_space'][army]
 	def get_soldier_composition(self, army):

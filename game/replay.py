@@ -64,6 +64,8 @@ class Replay:
 			func(*args)
 			yield game, (func, args)
 	def show(self, input_pause=False, show_stats=True):
+		if self.is_empty():
+			print('Empty replay')
 		for game, (func, args) in self.step():
 			print(game)
 			if func is not None:
@@ -77,6 +79,8 @@ class Replay:
 			yield game, (func, args)
 			if input_pause:
 				input()
+	def is_empty(self):
+		return len(self.action_history) == 0
 	def save(self, fpath):
 		'''
 		Append to the file at fpath a line that encodes this replay.  Existing data is never overwritten.

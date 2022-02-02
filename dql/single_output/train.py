@@ -65,28 +65,58 @@ def train_model(
 	def simulate_responses():
 		# For each running game in the simulation, ensure that the current player to move is the agent that's training.
 		# All moves played by the agent that isn't training are selected with opponent_action_selection().
-		_games, _agent_player = zip(*((game,player) for game,player in zip(games,agent_player) if game.turn != player))
+		# _games, _agent_player = zip(*((game,player) for game,player in zip(games,agent_player) if game.turn != player))
+		# _games = list(_games)
+		# _agent_player = list(_agent_player)
+		# while len(_games) > 0:
+		# 	verbose_print('.', end='')
+		# 	simulate(opponent_action_selection(_games))
+		# 	for i,(g,p) in enumerate(zip(_games,_agent_player)):
+		# 		if g.turn == p or g.is_game_over():
+		# 			del _games[i], _agent_player[i]
+		_games = []
+		_agent_player = []
+		for game, player in zip(games, agent_player):
+			if game.turn != player and not game.is_game_over():
+				_games.append(game)
+				_agent_player.append(player)
 		while len(_games) > 0:
 			verbose_print('.', end='')
 			simulate(opponent_action_selection(_games))
-			for i,(g,p) in enumerate(zip(_games,_agent_player)):
-				if g.turn == p or g.is_game_over():
-					del _games[i], _agent_player[i]
+			for i in range(len(_games)-1,-1,-1):
+				if _games[i].turn == _agent_player[i] or _games[i].is_game_over():
+					del _games[i]
+					del _agent_player[i]
 
 	verbose_print('=== Populating transition history... ===')
 
 	while True:
-		verbose_print('| Initializing reset games...')
+		verbose_print('\n| Initializing reset games...')
 		simulate_responses() # they all start with player 1 to move, so where the agent is player 2, bring each game to the state where it's player 2 to move
+
+		# for game, player in zip(games, agent_player):
+		# 	if game.turn != player:
+		# 		print(game)
+		# 		print(game.turn)
+		# 		print(player)
+		# 		print(game.is_game_over())
+		# 		print(game.setup_phase)
+		# 		print(game.total_turns)
+		# 		print(game.setup)
+		# 		replay = game.get_replay()
+		# 		print(replay)
+		# 		print(replay.action_history)
+		# 		for game, (func, args) in replay.show(input_pause=True):
+		# 			print(game.turn)
 
 		if populating_transitions:
 			actions = random_actions(games)
 		else:
-			verbose_print('\n| Predicting actions...')
+			verbose_print('| Predicting actions...')
 			actions = predict_actions(model, games, epsilon)
 		_old_states = games_to_input(games)
 		rewards = heuristic_scores(games, limit=20)
-		verbose_print('\n| Simulating actions...')
+		verbose_print('| Simulating actions...')
 		simulate(actions)
 
 		verbose_print('| Simulating responses...')
@@ -106,7 +136,8 @@ def train_model(
 					verbose_print()
 					num_reset = 0
 				verbose_print(f'| | Experience replay...     Total games / steps simulated: {len(scores)} / {len(rewards_history)}')
-				samples = steps_per_experience_replay * 2
+				verbose_print('Sampling transition memory...')
+				samples = steps_per_experience_replay * 16
 				sample_indices = np.random.randint(0, memory_capacity, samples)
 				sample_old_states = old_states[sample_indices]
 				sample_new_states = new_states[sample_indices]
@@ -114,6 +145,7 @@ def train_model(
 				sample_rewards = observed_rewards[sample_indices]
 				sample_terminated = terminated[sample_indices]
 
+				verbose_print('Updating model...')
 				pred_old_states = model.predict(sample_old_states)
 				pred_new_states = model.predict(sample_new_states)
 				pred_new_states_target = target_model.predict(sample_new_states)
@@ -196,8 +228,8 @@ def train_model(
 
 
 def symmetric_transitions(old_state, new_state, action_indices, reward, terminated, valid_actions_indices):
-	old_state_flipped = state_flip_symmetry(old_state)
-	new_state_flipped = state_flip_symmetry(new_state)
+	old_state_flipped = state_flip_symmetry(old_state, 1)
+	new_state_flipped = state_flip_symmetry(new_state, 1)
 	for k in range(4):
 		for flip in range(2):
 			yield \
