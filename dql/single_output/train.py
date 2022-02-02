@@ -57,6 +57,7 @@ def train_model(
 	epsilon = np.linspace(epsilon_min, epsilon_max, parallel_games, True)
 	games = [game_generator(i) for i in range(parallel_games)]
 	agent_player = np.arange(parallel_games, dtype=int) % 2
+	agent_player_score_mult = 1-2*agent_player
 
 	replays = []
 	scores = []
@@ -112,11 +113,11 @@ def train_model(
 		if populating_transitions:
 			actions = random_actions(games)
 		else:
-			verbose_print('| Predicting actions...')
+			verbose_print('\n| Predicting actions...')
 			actions = predict_actions(model, games, epsilon)
 		_old_states = games_to_input(games)
 		rewards = heuristic_scores(games, limit=20)
-		verbose_print('| Simulating actions...')
+		verbose_print('\n| Simulating actions...')
 		simulate(actions)
 
 		verbose_print('| Simulating responses...')
@@ -124,6 +125,7 @@ def train_model(
 
 		_new_states = games_to_input(games, turn=agent_player)
 		rewards = heuristic_scores(games, limit=20) - rewards
+		rewards *= agent_player_score_mult
 
 		rewards_history.append(rewards)
 
@@ -136,7 +138,7 @@ def train_model(
 					verbose_print()
 					num_reset = 0
 				verbose_print(f'| | Experience replay...     Total games / steps simulated: {len(scores)} / {len(rewards_history)}')
-				verbose_print('Sampling transition memory...')
+				verbose_print('| | | Sampling transition memory...')
 				samples = steps_per_experience_replay * 16
 				sample_indices = np.random.randint(0, memory_capacity, samples)
 				sample_old_states = old_states[sample_indices]
@@ -145,7 +147,7 @@ def train_model(
 				sample_rewards = observed_rewards[sample_indices]
 				sample_terminated = terminated[sample_indices]
 
-				verbose_print('Updating model...')
+				verbose_print('| | | Updating model...')
 				pred_old_states = model.predict(sample_old_states)
 				pred_new_states = model.predict(sample_new_states)
 				pred_new_states_target = target_model.predict(sample_new_states)
