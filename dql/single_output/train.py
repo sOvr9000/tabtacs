@@ -137,7 +137,7 @@ def train_model(
 				if num_reset > 0:
 					verbose_print()
 					num_reset = 0
-				verbose_print(f'| | Experience replay...     Total games / steps simulated: {len(scores)} / {len(rewards_history)}')
+				verbose_print(f'| | Experience replay...     Total games simulated: {len(scores)}')
 				verbose_print('| | | Sampling transition memory...')
 				samples = steps_per_experience_replay * 16
 				sample_indices = np.random.randint(0, memory_capacity, samples)
@@ -232,8 +232,8 @@ def train_model(
 def symmetric_transitions(old_state, new_state, action_indices, reward, terminated, valid_actions_indices):
 	old_state_flipped = state_flip_symmetry(old_state, 1)
 	new_state_flipped = state_flip_symmetry(new_state, 1)
-	for k in range(4):
-		for flip in range(2):
+	for flip in range(2):
+		for k in range(4):
 			yield \
 			state_rot_symmetry(old_state_flipped if flip else old_state, k), \
 			state_rot_symmetry(new_state_flipped if flip else new_state, k), \
