@@ -95,21 +95,6 @@ def train_model(
 		verbose_print('\n| Initializing reset games...')
 		simulate_responses() # they all start with player 1 to move, so where the agent is player 2, bring each game to the state where it's player 2 to move
 
-		# for game, player in zip(games, agent_player):
-		# 	if game.turn != player:
-		# 		print(game)
-		# 		print(game.turn)
-		# 		print(player)
-		# 		print(game.is_game_over())
-		# 		print(game.setup_phase)
-		# 		print(game.total_turns)
-		# 		print(game.setup)
-		# 		replay = game.get_replay()
-		# 		print(replay)
-		# 		print(replay.action_history)
-		# 		for game, (func, args) in replay.show(input_pause=True):
-		# 			print(game.turn)
-
 		if populating_transitions:
 			actions = random_actions(games)
 		else:
@@ -131,7 +116,7 @@ def train_model(
 
 		verbose_print('\n| Computing transition data...')
 		num_reset = 0
-		for i, (game, old_state, new_state, action, reward) in enumerate(zip(games, _old_states, _new_states, actions, rewards)):
+		for i, (game, old_state, new_state, action, reward, player) in enumerate(zip(games, _old_states, _new_states, actions, rewards, agent_player)):
 
 			if not populating_transitions and steps_since_experience_replay >= steps_per_experience_replay:
 				if num_reset > 0:
@@ -186,7 +171,7 @@ def train_model(
 				t_terminated = True
 				if game.record_replay:
 					replays.append(game.get_replay())
-				scores.append(game.get_score())
+				scores.append(game.get_score()[player])
 				games[i] = game_generator(i)
 			else:
 				t_terminated = False
