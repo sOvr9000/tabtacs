@@ -5,7 +5,7 @@ from .data import \
     pred_argmax, \
     state_rot_symmetry, state_flip_symmetry, action_symmetry, actions_symmetry
 
-from .models import build_model, model_predict, predict_actions, predict_str, load_model, copy_model
+from .models import build_model, model_predict, predict_actions, predict_str, load_model, copy_model, evaluate_models
 
 from .train import train_model
 

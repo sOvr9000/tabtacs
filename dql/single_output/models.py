@@ -2,9 +2,10 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import InputLayer, Dense, Conv2D, Flatten, Reshape
+from wandb import agent
 
-from ...game import action_to_str
-from .data import game_valid_actions, games_to_input, games_valid_actions, indices_to_action, indices_to_actions, pred_argmax, actions_to_indices, random_action
+from ...game import action_to_str, TableTactics, random_board_setup, total_scores_to_str
+from .data import game_valid_actions, games_to_input, games_valid_actions, indices_to_action, pred_argmax, actions_to_indices, random_action, simulate
 
 
 def build_model():
@@ -85,3 +86,56 @@ def predict_str(model, game):
 		for action_str, (y, x, k), interp in sorted(zip(action_strs, action_indices, discrete_interpolated), key=lambda t:pred[t[1][0],t[1][1],t[1][2]], reverse=True)
 	)
 
+def evaluate_models(models, game_generator = None, num_games_per_pair = 100, verbose = True):
+	'''
+	Return the total points scored by each model in a round-robin tournament.
+
+	If game_generator is None, then random setups are used to set up new TableTactics instances for each game.
+	'''
+	if game_generator is None:
+		game_generator = lambda i: TableTactics(setup=random_board_setup((6,6)), auto_end_turn=True, record_replay=False)
+	scores = [0] * len(models)
+	num_pairings = len(models) * (len(models) - 1) // 2
+	if verbose:
+		print(f'Beginning round-robin tournament between {len(models)} contestants...')
+		print(f'Total pairings: {num_pairings}')
+		print(f'Total number of games per contestant: {num_games_per_pair * (len(models) - 1)}')
+		print(f'Total number of games to simulate: {num_games_per_pair * num_pairings}')
+		print()
+	K = 0
+	for i, model1 in enumerate(models[:-1]):
+		for j, model2 in enumerate(models[i+1:]):
+			if verbose:
+				print(f'Pairing {K+1} / {num_pairings}')
+			games = [game_generator(z) for z in range(num_games_per_pair)]
+			model1_player = [n%2 for n in range(num_games_per_pair)]
+			while len(games) > 0:
+				model1_games = []
+				model2_games = []
+				for game, player in zip(games, model1_player):
+					if game.turn == player:
+						model1_games.append(game)
+					else:
+						model2_games.append(game)
+				to_remove = []
+				if len(model1_games) > 0:
+					simulate(predict_actions(model1, model1_games, 0))
+					for game in model1_games:
+						if game.is_game_over():
+							to_remove.append(game)
+				if len(model2_games) > 0:
+					simulate(predict_actions(model2, model2_games, 0))
+					for game in model2_games:
+						if game.is_game_over():
+							to_remove.append(game)
+				for game in to_remove:
+					score = game.get_score()
+					_i = model1_player[games.index(game)]
+					scores[i] += score[_i]
+					scores[j] += score[1-_i]
+					del model1_player[games.index(game)]
+					games.remove(game)
+			K += 1
+			if verbose:
+				print(f'Current scores: {total_scores_to_str(scores)}\n')
+	return scores
