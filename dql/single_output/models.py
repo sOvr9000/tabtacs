@@ -1,25 +1,33 @@
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import InputLayer, Dense, Conv2D, Flatten, Reshape
+from tensorflow.keras.layers import Input, Dense, Conv2D, Flatten, Reshape, GlobalAveragePooling2D, multiply
 from wandb import agent
 
 from ...game import action_to_str, TableTactics, random_board_setup, total_scores_to_str
 from .data import game_valid_actions, games_to_input, games_valid_actions, indices_to_action, pred_argmax, actions_to_indices, random_action, simulate
 
 
-def build_model():
-	model = tf.keras.Sequential([
-		InputLayer((6,6,7)),
-		Conv2D(128, (2,2), (1,1), 'valid', activation='relu'),
-		Conv2D(256, (3,3), (1,1), 'valid', activation='relu'),
-		Conv2D(128, (2,2), (1,1), 'valid', activation='relu'),
-		Flatten(),
-		Dense(512, 'relu'),
-		Dense(512, 'relu'),
-		Dense(396),
-		Reshape((6,6,11)), # maybe this just... works?
-	])
+def build_model(blocks = 10, filters = 128):
+	# Following the architecture of LCZero: https://lczero.org/dev/backend/nn/
+	def squeeze_and_excitation_layer(inp_convolution, num_channels):
+		x = GlobalAveragePooling2D()(inp_convolution)
+		x = Dense(num_channels // 16, 'relu')(x)
+		x = Dense(num_channels, 'sigmoid')(x)
+		return multiply([inp_convolution, x])
+	def block(inp_convolution):
+		x = Conv2D(filters, (3,3), (1,1), 'same', activation='relu')(inp_convolution)
+		return squeeze_and_excitation_layer(x, filters)
+
+	inp_board = Input((6,6,7))
+
+	x = block(inp_board)
+	for _ in range(blocks-1):
+		x = block(x)
+	
+	x = Conv2D(11, (3,3), (1,1), 'same', activation='linear')(x)
+
+	model = tf.keras.Model(inputs=inp_board, outputs=x)
 	model.compile('adam', 'msle')
 	return model
 
@@ -105,6 +113,7 @@ def evaluate_models(models, game_generator = None, num_games_per_pair = 100, ver
 	K = 0
 	for i, model1 in enumerate(models[:-1]):
 		for j, model2 in enumerate(models[i+1:]):
+			j += i+1
 			if verbose:
 				print(f'Pairing {K+1} / {num_pairings}')
 			games = [game_generator(z) for z in range(num_games_per_pair)]
