@@ -98,6 +98,9 @@ def train_model(
 					cb(iteration)
 				verbose_print('=== Starting next iteration... ===')
 				break
+			
+			if populating_transitions:
+				verbose_print(f'\n| Current transition index / max: {transition_index} / {memory_capacity}')
 
 			verbose_print('\n| Initializing reset games...')
 			simulate_responses() # they all start with player 1 to move, so where the agent is player 2, bring each game to the state where it's player 2 to move
