@@ -8,7 +8,7 @@ from ...game import action_to_str, TableTactics, random_board_setup, total_score
 from .data import game_valid_actions, games_to_input, games_valid_actions, indices_to_action, pred_argmax, actions_to_indices, random_action, simulate
 
 
-def build_model(blocks = 10, filters = 128):
+def build_model(blocks = 10, filters = 128, learning_rate = 0.001):
 	# Following the architecture of LCZero: https://lczero.org/dev/backend/nn/
 	def squeeze_and_excitation_layer(inp_convolution, num_channels):
 		x = GlobalAveragePooling2D()(inp_convolution)
@@ -28,7 +28,8 @@ def build_model(blocks = 10, filters = 128):
 	x = Conv2D(11, (3,3), (1,1), 'same', activation='linear')(x)
 
 	model = tf.keras.Model(inputs=inp_board, outputs=x)
-	model.compile('adam', 'msle')
+	model.compile('adam', 'mse')
+	model.optimizer.learning_rate = learning_rate
 	return model
 
 
