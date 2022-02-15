@@ -132,8 +132,9 @@ def train_model(
 						verbose_print()
 						num_reset = 0
 					verbose_print(f'| | Experience replay...     Total games simulated: {len(scores)}')
-					verbose_print('| | | Sampling transition memory...')
+
 					samples = steps_per_experience_replay * 16
+					verbose_print(f'| | | Sampling transition memory... (samples = {samples})')
 					sample_indices = np.random.randint(0, memory_capacity, samples)
 					sample_old_states = old_states[sample_indices]
 					sample_new_states = new_states[sample_indices]
@@ -141,18 +142,21 @@ def train_model(
 					sample_rewards = observed_rewards[sample_indices]
 					sample_terminated = terminated[sample_indices]
 
-					verbose_print('| | | Updating model...')
+					verbose_print('| | | Correcting model predictions...')
 					pred_old_states = model.predict(sample_old_states)
 					pred_new_states = model.predict(sample_new_states)
 					pred_new_states_target = target_model.predict(sample_new_states)
 					pred_new_states_argmax = pred_argmax(pred_new_states_target, map(valid_actions_indices.__getitem__, sample_indices))
 					Y1,X1,K1 = sample_action_indices.T
 					Y2,X2,K2 = pred_new_states_argmax.T
+					verbose_print('| | | | Indexing...') # This part can take a while for large arrays
 					pred_old_states[np.arange(samples),Y1,X1,K1] = sample_rewards + 0.9 * (1 - sample_terminated.astype(int)) * pred_new_states[np.arange(samples),Y2,X2,K2]
 
+					verbose_print('| | | Fitting...')
 					model.fit(sample_old_states, pred_old_states, batch_size=fit_batch_size, epochs=fit_epochs, callbacks=fit_callbacks)
 
 					# Polyak averaging
+					verbose_print('| | | Updating target model weights...')
 					target_model.set_weights([tau*w1+(1-tau)*w2 for w1, w2 in zip(model.get_weights(), target_model.get_weights())])
 
 					steps_since_experience_replay = 0
