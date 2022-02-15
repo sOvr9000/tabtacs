@@ -1,6 +1,6 @@
 
 import json
-
+import numpy as np
 from .board_setups import fix_board_setup
 from .taclib import DIRECTION_NAMES, action_to_str, count_lines
 from .enums import SoldierType
@@ -99,6 +99,12 @@ class Replay:
 	def final_state(self):
 		for game, _ in self.step(): pass
 		return game
+	def get_board_history(self):
+		board_history = np.zeros((len(self.action_history)+1,6,6,5), dtype=int)
+		for i, (game, _) in enumerate(self.step()):
+			board_history[i] = game.board
+		return board_history
+
 
 def load_replays(fpath, start_index = 0, end_index = None):
 	if end_index is None:

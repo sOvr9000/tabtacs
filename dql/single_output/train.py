@@ -111,7 +111,6 @@ def train_model(
 				verbose_print('\n| Predicting actions...')
 				actions = predict_actions(model, games, epsilon)
 			_old_states = games_to_input(games)
-			rewards = heuristic_scores(games, limit=20)
 			verbose_print('\n| Simulating actions...')
 			simulate(actions)
 
@@ -119,7 +118,7 @@ def train_model(
 			simulate_responses()
 
 			_new_states = games_to_input(games, turn=agent_player)
-			rewards = heuristic_scores(games, limit=20) - rewards
+			rewards = heuristic_scores(games, limit=20)
 			rewards *= agent_player_score_mult
 
 			rewards_history.append(rewards)
