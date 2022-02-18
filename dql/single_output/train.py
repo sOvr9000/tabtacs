@@ -154,12 +154,13 @@ def train_model(
 					if samples >= 4096:
 						# speed work-around (far fewer hash lookups, much faster)
 						for entry_index in range(0, samples, 2048):
+							M = min(entry_index+2048,samples)
 							pred_old_states[
-								np.arange(entry_index,entry_index+2048),
-								Y1[entry_index:entry_index+2048],
-								X1[entry_index:entry_index+2048],
-								K1[entry_index:entry_index+2048]
-							] = updated_entries[entry_index:entry_index+2048]
+								np.arange(entry_index,M),
+								Y1[entry_index:M],
+								X1[entry_index:M],
+								K1[entry_index:M]
+							] = updated_entries[entry_index:M]
 					else:
 						pred_old_states[np.arange(samples),Y1,X1,K1] = updated_entries
 
