@@ -70,28 +70,43 @@ def actions_symmetry(actions_indices, k, flip):
 
 
 
-def get_state(game, turn=None):
-	'''
-	Return two-tuple of arrays.  First array is the board state, second array is the extraneous information defining the overall game state.
-	'''
+SOLDIER_TYPE_SPACE = np.array([-1, 0.25, 0.75])
 
+def get_state(game, turn=None):
 	# TODO: BECAUSE THERE ARE ONLY TWO ARMIES, IT IS BETTER TO LET -1 CORRESPOND TO PLAYER 0, 1 CORRESPOND TO PLAYER 1, AND 0 CORRESPOND TO NO PLAYER
 	# ... to avoid exploding gradients
 
 	if turn is None:
 		turn = game.turn
-	conc = np.concatenate((game.board, game.placement_mask[:,:,np.newaxis]), axis=2)
-	conc_army = conc[:,:,[1,5]]
-	ac = game.army_cycle[turn][conc_army.astype(int)]
+	obstacle = game.board[:,:,[0]]
+	army = game.board[:,:,[1]]
+	soldier_type = game.board[:,:,[2]]
+	soldier_hitpoints = game.board[:,:,[3]]
+	soldier_actions = game.board[:,:,[4]]
+	placement_mask = game.placement_mask[:,:,np.newaxis]
 	lal = np.zeros((6,6,1))
-	lal[game.last_action_location_y, game.last_action_location_x] = game.current_steps_remaining
+	lal[game.last_action_location_y, game.last_action_location_x] = game.current_steps_remaining ** 0.5 * 0.5
 	return np.concatenate((
-		conc[:,:,[0]],
-		np.where(conc_army == -1, conc_army, ac),
-		np.interp(conc[:,:,[2,4]], (-1, 2), (-1, 1)),
-		np.interp(conc[:,:,[3]], (-1, 4), (-1, 1)),
-		lal,#lol
+		obstacle,
+		np.where(army == -1, 0, 1-2*game.army_cycle[turn][army]),
+		np.where(soldier_type == -1, 0, SOLDIER_TYPE_SPACE[soldier_type]),
+		np.where(soldier_hitpoints == -1, 0, soldier_hitpoints*0.3),
+		np.where(soldier_actions == -1, 0, 3-2*soldier_actions),
+		np.where(placement_mask == -1, 0, 1-2*game.army_cycle[turn][placement_mask]),
+		lal
 	), axis=2)
+	# conc = np.concatenate((game.board, game.placement_mask[:,:,np.newaxis]), axis=2)
+	# conc_army = conc[:,:,[1,5]]
+	# ac = game.army_cycle[turn][conc_army.astype(int)]
+	# lal = np.zeros((6,6,1))
+	# lal[game.last_action_location_y, game.last_action_location_x] = game.current_steps_remaining ** 0.5 * 0.5
+	# return np.concatenate((
+	# 	conc[:,:,[0]],
+	# 	np.where(conc_army == -1, conc_army, ac),
+	# 	np.interp(conc[:,:,[2,4]], (-1, 2), (-1, 1)),
+	# 	np.interp(conc[:,:,[3]], (-1, 4), (-1, 1)),
+	# 	lal,#lol
+	# ), axis=2)
 
 def games_to_input(games, turn=None):
 	'''
