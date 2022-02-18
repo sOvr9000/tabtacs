@@ -1,15 +1,15 @@
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Dense, Conv2D, Flatten, Reshape, GlobalAveragePooling2D, multiply
-from wandb import agent
+from tensorflow.keras.layers import Input, Dense, Conv2D, TimeDistributed, GlobalAveragePooling2D, multiply
 
 from ...game import action_to_str, TableTactics, random_board_setup, total_scores_to_str
 from .data import game_valid_actions, games_to_input, games_valid_actions, indices_to_action, pred_argmax, actions_to_indices, random_action, simulate
 
 
-def build_model(blocks = 10, filters = 128, learning_rate = 0.001):
+def build_model(blocks = 10, filters = 128, dense_layers = 3, dense_units = 32, learning_rate = 0.001):
 	# Following the architecture of LCZero: https://lczero.org/dev/backend/nn/
+	# ... with additional layers.
 	def squeeze_and_excitation_layer(inp_convolution, num_channels):
 		x = GlobalAveragePooling2D()(inp_convolution)
 		x = Dense(num_channels // 16, 'relu')(x)
@@ -20,9 +20,12 @@ def build_model(blocks = 10, filters = 128, learning_rate = 0.001):
 		return squeeze_and_excitation_layer(x, filters)
 
 	inp_board = Input((6,6,7))
+	x = inp_board
 
-	x = block(inp_board)
-	for _ in range(blocks-1):
+	for _ in range(dense_layers):
+		x = TimeDistributed(TimeDistributed(Dense(dense_units, 'relu')))(x)
+
+	for _ in range(blocks):
 		x = block(x)
 	
 	x = Conv2D(11, (3,3), (1,1), 'same', activation='linear')(x)
