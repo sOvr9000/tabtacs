@@ -150,7 +150,7 @@ def train_model(
 					Y1,X1,K1 = sample_action_indices.T
 					Y2,X2,K2 = pred_new_states_argmax.T
 					verbose_print('| | | | Indexing...') # This part can take a while for large arrays
-					updated_entries = sample_rewards + 0.9 * (1 - sample_terminated.astype(int)) * pred_new_states[np.arange(samples),Y2,X2,K2]
+					updated_entries = sample_rewards + 0.97 * (1 - sample_terminated.astype(int)) * pred_new_states[np.arange(samples),Y2,X2,K2]
 					if samples >= 4096:
 						# speed work-around (far fewer hash lookups, much faster)
 						for entry_index in range(0, samples, 2048):
