@@ -159,7 +159,7 @@ def train_model(
 								Y1[entry_index:entry_index+2048],
 								X1[entry_index:entry_index+2048],
 								K1[entry_index:entry_index+2048]
-							] = updated_entries
+							] = updated_entries[entry_index:entry_index+2048]
 					else:
 						pred_old_states[np.arange(samples),Y1,X1,K1] = updated_entries
 
