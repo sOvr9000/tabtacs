@@ -88,11 +88,11 @@ def get_state(game, turn=None):
 	lal[game.last_action_location_y, game.last_action_location_x] = game.current_steps_remaining ** 0.5 * 0.5
 	return np.concatenate((
 		obstacle,
-		np.where(army == -1, 0, 1-2*game.army_cycle[turn][army]),
-		np.where(soldier_type == -1, 0, SOLDIER_TYPE_SPACE[soldier_type]),
+		np.where(army == -1, 0, 1-2*game.army_cycle[turn][army.astype(int)]),
+		np.where(soldier_type == -1, 0, SOLDIER_TYPE_SPACE[soldier_type.astype(int)]),
 		np.where(soldier_hitpoints == -1, 0, soldier_hitpoints*0.3),
 		np.where(soldier_actions == -1, 0, 3-2*soldier_actions),
-		np.where(placement_mask == -1, 0, 1-2*game.army_cycle[turn][placement_mask]),
+		np.where(placement_mask == -1, 0, 1-2*game.army_cycle[turn][placement_mask.astype(int)]),
 		lal
 	), axis=2)
 	# conc = np.concatenate((game.board, game.placement_mask[:,:,np.newaxis]), axis=2)
