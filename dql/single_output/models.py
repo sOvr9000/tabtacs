@@ -85,9 +85,7 @@ def predict_str(model, game):
 	action_strs = list(map(action_to_str,actions))
 	Y,X,K = action_indices.T
 	q_values = pred[Y,X,K]
-	scaled = q_values/max(abs(q_values.max()),abs(q_values.min()))
-	interpolated = np.exp(scaled)
-	interpolated /= interpolated.sum() # like softmax
+	interpolated = np.interp(q_values, (q_values.min(), q_values.max()), (0, 1))
 	discrete_interpolated = (interpolated*32+.5).astype(int)
 	return '\n'.join(
 		'{} | {:+3.3f} | {}'.format(
