@@ -89,7 +89,7 @@ def predict_str(model, game):
 	discrete_interpolated = (interpolated*32+.5).astype(int)
 	return '\n'.join(
 		'{} | {:+3.3f} | {}'.format(
-			'#'*interp + ' '*(32-interp),
+			'#'*max(1,interp) + ' '*(32-max(1,interp)),
 			pred[y,x,k],
 			action_str
 		)
