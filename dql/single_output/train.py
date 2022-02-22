@@ -24,6 +24,8 @@ def train_model(
 	epsilon_max = 0.99,
 	tau = 0.01,
 
+	gamma = 0.97,
+
 	fit_batch_size = 256,
 	fit_epochs = 2,
 	fit_callbacks = None,
@@ -150,7 +152,6 @@ def train_model(
 					Y1,X1,K1 = sample_action_indices.T
 					Y2,X2,K2 = pred_new_states_argmax.T
 					verbose_print('| | | | Indexing...') # This part can take a while for large arrays
-					updated_entries = sample_rewards + 0.97 * (1 - sample_terminated.astype(int)) * pred_new_states[np.arange(samples),Y2,X2,K2]
 					if samples >= 4096:
 						# speed work-around (far fewer hash lookups, much faster)
 						for entry_index in range(0, samples, 2048):
@@ -160,9 +161,16 @@ def train_model(
 								Y1[entry_index:M],
 								X1[entry_index:M],
 								K1[entry_index:M]
-							] = updated_entries[entry_index:M]
+							] = sample_rewards[entry_index:M] + gamma * (
+								1 - sample_terminated[entry_index:M].astype(int)
+							) * pred_new_states[
+								np.arange(entry_index,M),
+								Y2[entry_index:M],
+								X2[entry_index:M],
+								K2[entry_index:M]
+							]
 					else:
-						pred_old_states[np.arange(samples),Y1,X1,K1] = updated_entries
+						pred_old_states[np.arange(samples),Y1,X1,K1] = sample_rewards + gamma * (1 - sample_terminated.astype(int)) * pred_new_states[np.arange(samples),Y2,X2,K2]
 
 					verbose_print('| | | Fitting...')
 					model.fit(sample_old_states, pred_old_states, batch_size=fit_batch_size, epochs=fit_epochs, callbacks=fit_callbacks)
