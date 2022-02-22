@@ -5,7 +5,7 @@ Using data.py and models.py to implement deep Q-learning.
 
 import numpy as np
 from .data import action_to_indices, actions_to_indices, games_to_input, heuristic_scores, pred_argmax, random_actions, simulate, state_flip_symmetry, state_rot_symmetry, action_symmetry, actions_symmetry
-from .models import predict_actions, copy_model, evaluate_models
+from .models import predict_actions, copy_model
 
 def train_model(
 	model,
