@@ -13,7 +13,10 @@ from .replay import Replay
 
 class TableTactics:
 
+	DEFAULT_MAX_TURNS = 20
+
 	SOLDIER_DATA_SLICE = slice(1,5)
+
 	OBSTACLE_INDEX = 0
 	ARMY_INDEX = 1
 	SOLDIER_TYPE_INDEX = 2
@@ -58,7 +61,7 @@ class TableTactics:
 		else:
 			# default to no obstacles
 			self.board[:,:,0] = -np.ones(self.setup['board_size'])
-		self.maximum_turns = self.setup['maximum_turns'] if 'maximum_turns' in self.setup else 50
+		self.maximum_turns = self.setup['maximum_turns'] if 'maximum_turns' in self.setup else self.DEFAULT_MAX_TURNS
 		self.army_cycle = np.array([
 			[(i+j)%self.num_armies for j in range(self.num_armies)]
 			for i in range(self.num_armies)
