@@ -71,11 +71,6 @@ def predict_actions(model, games, epsilon):
 def predict_str(model, game):
 	'''
 	Return a nicely formatted string showing what the model thinks about the current position in the game (from the perspective of the current player to move).
-
-	Each of the possible valid actions is listed on a separate line.
-	Preceding each action is the raw Q-value of that action (produced by the model) and the relative "mass" of that Q-value in comparison to the Q-values of the other valid actions.
-	For example, the bar will be twice as long for a Q-value that is twice as "good" (by some definition that is difficult to describe).
-	Q-values that are close to each other will have bars of nearly identical length because that implies the model thinks the actions are equally as good.
 	'''
 	actions = game_valid_actions(game)
 	if len(actions) == 0:

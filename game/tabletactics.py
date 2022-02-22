@@ -9,9 +9,6 @@ from .replay import Replay
 
 
 
-# TODO: Attacks cause current_steps_remaining to reset to zero.
-# TODO: Using an action to move causes current_steps_remaining to reset to (one less than) a configured value.
-# NOTE: Without these changes, soldiers are allowed to move, attack, and move again, using only two moves instead of three.
 
 
 class TableTactics:
@@ -225,6 +222,7 @@ class TableTactics:
 		self.decrement_soldier_hitpoints_remaining(nx, ny)
 		if self.record_replay:
 			self.replay.append_action(self.attack_soldier, (x, y, d))
+		self.current_steps_remaining = 0
 		self.check_auto_end_turn()
 	def check_auto_end_turn(self):
 		if self.auto_end_turn:

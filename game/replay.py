@@ -2,25 +2,11 @@
 import json
 import numpy as np
 from .board_setups import fix_board_setup
-from .taclib import DIRECTION_NAMES, action_to_str, count_lines
+from .taclib import DIRECTION_NAMES, ACTION_LEGEND, ACTION_LEGEND_INV, SOLDIER_LEGEND, SOLDIER_LEGEND_INV, action_to_str, count_lines
 from .enums import SoldierType
 
 
 
-ACTION_LEGEND = {
-	'a': 'attack_soldier',
-	'p': 'add_soldier',
-	'm': 'move_soldier',
-	'_': 'end_turn',
-}
-ACTION_LEGEND_INV = {v:k for k,v in ACTION_LEGEND.items()}
-
-SOLDIER_LEGEND = {
-	'+': SoldierType.Noble,
-	'f': SoldierType.Fighter,
-	't': SoldierType.Thief,
-}
-SOLDIER_LEGEND_INV = {v:k for k,v in SOLDIER_LEGEND.items()}
 
 
 
