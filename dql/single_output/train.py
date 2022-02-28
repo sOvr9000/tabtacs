@@ -14,6 +14,7 @@ def train_model(
 
 	memory_capacity = 500000,
 	steps_per_experience_replay = 10000,
+	experience_replay_sampling_rate = 4,
 
 	iteration_duration = 10000,
 	iteration_callbacks = None, # mainly used to update opponent_action_selection
@@ -135,7 +136,7 @@ def train_model(
 						num_reset = 0
 					verbose_print(f'| | Experience replay...     Total games simulated: {len(scores)}')
 
-					samples = steps_per_experience_replay * 16
+					samples = steps_per_experience_replay * 8 * experience_replay_sampling_rate
 					verbose_print(f'| | | Sampling transition memory... (samples = {samples})')
 					sample_indices = np.random.randint(0, memory_capacity, samples)
 					sample_old_states = old_states[sample_indices]
