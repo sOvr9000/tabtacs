@@ -14,7 +14,8 @@ def train_model(
 
 	memory_capacity = 500000,
 	steps_per_experience_replay = 10000,
-	experience_replay_sampling_rate = 4,
+	experience_replay_sampling_rate = 2,
+	experience_replay_repetition = 5,
 
 	iteration_duration = 10000,
 	iteration_callbacks = None, # mainly used to update opponent_action_selection
@@ -134,51 +135,52 @@ def train_model(
 					if num_reset > 0:
 						verbose_print()
 						num_reset = 0
-					verbose_print(f'| | Experience replay...     Total games simulated: {len(scores)}')
-
 					samples = steps_per_experience_replay * 8 * experience_replay_sampling_rate
-					verbose_print(f'| | | Sampling transition memory... (samples = {samples})')
-					sample_indices = np.random.randint(0, memory_capacity, samples)
-					sample_old_states = old_states[sample_indices]
-					sample_new_states = new_states[sample_indices]
-					sample_action_indices = action_indices[sample_indices]
-					sample_rewards = observed_rewards[sample_indices]
-					sample_terminated = terminated[sample_indices]
+					verbose_print(f'| | Experience replay...     Total games simulated: {len(scores)} | Sampling size: {samples}')
 
-					verbose_print('| | | Correcting model predictions...')
-					pred_old_states = model.predict(sample_old_states)
-					pred_new_states = model.predict(sample_new_states)
-					pred_new_states_target = target_model.predict(sample_new_states)
-					pred_new_states_argmax = pred_argmax(pred_new_states_target, map(valid_actions_indices.__getitem__, sample_indices))
-					Y1,X1,K1 = sample_action_indices.T
-					Y2,X2,K2 = pred_new_states_argmax.T
-					verbose_print('| | | | Indexing...') # This part can take a while for large arrays
-					if samples >= 4096:
-						# speed work-around (far fewer hash lookups, much faster)
-						for entry_index in range(0, samples, 2048):
-							M = min(entry_index+2048,samples)
-							pred_old_states[
-								np.arange(entry_index,M),
-								Y1[entry_index:M],
-								X1[entry_index:M],
-								K1[entry_index:M]
-							] = sample_rewards[entry_index:M] + gamma * (
-								1 - sample_terminated[entry_index:M].astype(int)
-							) * pred_new_states[
-								np.arange(entry_index,M),
-								Y2[entry_index:M],
-								X2[entry_index:M],
-								K2[entry_index:M]
-							]
-					else:
-						pred_old_states[np.arange(samples),Y1,X1,K1] = sample_rewards + gamma * (1 - sample_terminated.astype(int)) * pred_new_states[np.arange(samples),Y2,X2,K2]
+					for rep in range(experience_replay_repetition):
+						verbose_print(f'| | | Repetition #{rep+1})')
+						sample_indices = np.random.randint(0, memory_capacity, samples)
+						sample_old_states = old_states[sample_indices]
+						sample_new_states = new_states[sample_indices]
+						sample_action_indices = action_indices[sample_indices]
+						sample_rewards = observed_rewards[sample_indices]
+						sample_terminated = terminated[sample_indices]
 
-					verbose_print('| | | Fitting...')
-					model.fit(sample_old_states, pred_old_states, batch_size=fit_batch_size, epochs=fit_epochs, callbacks=fit_callbacks)
+						verbose_print('| | | Correcting model predictions...')
+						pred_old_states = model.predict(sample_old_states)
+						pred_new_states = model.predict(sample_new_states)
+						pred_new_states_target = target_model.predict(sample_new_states)
+						pred_new_states_argmax = pred_argmax(pred_new_states_target, map(valid_actions_indices.__getitem__, sample_indices))
+						Y1,X1,K1 = sample_action_indices.T
+						Y2,X2,K2 = pred_new_states_argmax.T
+						verbose_print('| | | | Indexing...') # This part can take a while for large arrays
+						if samples >= 4096:
+							# speed work-around (far fewer hash lookups, much faster)
+							for entry_index in range(0, samples, 2048):
+								M = min(entry_index+2048,samples)
+								pred_old_states[
+									np.arange(entry_index,M),
+									Y1[entry_index:M],
+									X1[entry_index:M],
+									K1[entry_index:M]
+								] = sample_rewards[entry_index:M] + gamma * (
+									1 - sample_terminated[entry_index:M].astype(int)
+								) * pred_new_states[
+									np.arange(entry_index,M),
+									Y2[entry_index:M],
+									X2[entry_index:M],
+									K2[entry_index:M]
+								]
+						else:
+							pred_old_states[np.arange(samples),Y1,X1,K1] = sample_rewards + gamma * (1 - sample_terminated.astype(int)) * pred_new_states[np.arange(samples),Y2,X2,K2]
 
-					# Polyak averaging
-					verbose_print('| | | Updating target model weights...')
-					target_model.set_weights([tau*w1+(1-tau)*w2 for w1, w2 in zip(model.get_weights(), target_model.get_weights())])
+						verbose_print('| | | Fitting...')
+						model.fit(sample_old_states, pred_old_states, batch_size=fit_batch_size, epochs=fit_epochs, callbacks=fit_callbacks)
+
+						# Polyak averaging
+						verbose_print('| | | Updating target model weights...')
+						target_model.set_weights([tau*w1+(1-tau)*w2 for w1, w2 in zip(model.get_weights(), target_model.get_weights())])
 
 					steps_since_experience_replay = 0
 
