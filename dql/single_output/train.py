@@ -19,6 +19,7 @@ def train_model(
 
 	iteration_duration = 10000,
 	iteration_callbacks = None, # mainly used to update opponent_action_selection
+	clear_transitions = True, # whether to clear transition history for each new iteration
 
 	opponent_action_selection = None,
 
@@ -77,22 +78,23 @@ def train_model(
 	while True:
 		verbose_print(f'=== Initializing run for iteration #{iteration}... ===')
 
-		old_states = np.zeros((memory_capacity, *model.input_shape[1:]))
-		new_states = old_states.copy()
-		action_indices = np.zeros((memory_capacity, len(model.output_shape)-1), dtype=int)
-		observed_rewards = np.zeros(memory_capacity)
-		terminated = np.zeros(memory_capacity, dtype=bool)
-		valid_actions_indices = [None] * memory_capacity
+		if clear_transitions or iteration == 0:
+			old_states = np.zeros((memory_capacity, *model.input_shape[1:]))
+			new_states = old_states.copy()
+			action_indices = np.zeros((memory_capacity, len(model.output_shape)-1), dtype=int)
+			observed_rewards = np.zeros(memory_capacity)
+			terminated = np.zeros(memory_capacity, dtype=bool)
+			valid_actions_indices = [None] * memory_capacity
 
-		transition_index = 0
-		steps_since_experience_replay = 0
-		populating_transitions = True
+			transition_index = 0
+			steps_since_experience_replay = 0
+			populating_transitions = True
 
-		replays = []
-		scores = []
-		rewards_history = []
+			replays = []
+			scores = []
+			rewards_history = []
 
-		verbose_print('=== Populating transition history... ===')
+			verbose_print('=== Populating transition history... ===')
 
 		while True:
 			if len(scores) >= iteration_duration:
