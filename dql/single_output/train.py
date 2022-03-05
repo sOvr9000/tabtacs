@@ -141,7 +141,7 @@ def train_model(
 					verbose_print(f'| | Experience replay...     Total games simulated: {len(scores)} | Sampling size: {samples}')
 
 					for rep in range(experience_replay_repetition):
-						verbose_print(f'| | | Repetition #{rep+1})')
+						verbose_print(f'| | | Repetition #{rep+1}')
 						sample_indices = np.random.randint(0, memory_capacity, samples)
 						sample_old_states = old_states[sample_indices]
 						sample_new_states = new_states[sample_indices]
