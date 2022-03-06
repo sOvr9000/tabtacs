@@ -90,11 +90,11 @@ def train_model(
 			steps_since_experience_replay = 0
 			populating_transitions = True
 
-			replays = []
-			scores = []
-			rewards_history = []
-
 			verbose_print('=== Populating transition history... ===')
+
+		replays = []
+		scores = []
+		rewards_history = []
 
 		while True:
 			if len(scores) >= iteration_duration:
